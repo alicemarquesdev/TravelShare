@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using TravelShare.Helper;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
@@ -43,17 +42,39 @@ namespace TravelShare.Controllers
             ViewBag.UsuarioLogado = usuarioLogado.Id.ToString();
 
             ViewBag.PostsDoUsuario = await _postRepository.BuscarTodosOsPostsDoUsuarioAsync(usuario.Id);
-            ViewBag.PaisesVisitados = usuario.PaisesVisitados.ToList();
+            ViewBag.PaisesVisitados = usuario.CidadesVisitadas.ToList();
 
             return View(usuario);
         }
 
         public async Task<IActionResult> EditarPerfil(string id)
         {
+            // Buscar o usuário pelo ID
             var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
-            ViewBag.Senha = usuario.Senha;
-            return View(usuario);
+            if (usuario == null)
+            {
+                TempData["Message"] = "Usuário não encontrado.";
+                return RedirectToAction("Index"); // Ou para uma página de erro
+            }
+
+            // Mapear os dados de UsuarioModel para UsuarioSemSenhaModel
+            var usuarioSemSenha = new UsuarioSemSenhaModel
+            {
+                Nome = usuario.Nome,
+                Username = usuario.Username,
+                Email = usuario.Email,
+                DataNascimento = usuario.DataNascimento,
+                CidadeDeNascimento = usuario.CidadeDeNascimento,
+                Bio = usuario.Bio,
+                CidadesVisitadas = usuario.CidadesVisitadas,
+                Seguindo = usuario.Seguindo,
+                Seguidores = usuario.Seguidores,
+                FotoPerfil = usuario.FotoPerfil // Mapeando a FotoPerfil também
+            };
+
+            // Passar o usuarioSemSenha para a View
+            return View(usuarioSemSenha);
         }
 
         public async Task<IActionResult> Seguidores(string id)
@@ -95,17 +116,15 @@ namespace TravelShare.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditarPerfil(UsuarioModel usuario, IFormFile? foto)
+        public async Task<IActionResult> EditarPerfil(UsuarioSemSenhaModel usuario, IFormFile? foto)
         {
             try
             {
                 var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuario.Id);
 
-                if (usuario != null)
+                if (usuario == null)
                 {
-                    usuario.Senha = usuarioDb.Senha; // Mantenha a senha do banco
-                    ModelState.Remove("Senha"); // Remova a validação para o campo Senha
-                    ModelState.Remove("SenhaConfirmacao"); // Remova a validação para o campo SenhaConfirmacao
+                    return RedirectToAction("Login", "Login");
                 }
                 if (!ModelState.IsValid)
                 {
@@ -120,12 +139,6 @@ namespace TravelShare.Controllers
                     if (foto != null)
                     {
                         usuario.FotoPerfil = await _caminhoImagem.GerarCaminhoImagemAsync(foto);
-                    }
-
-                    // Comparar se a nova foto é diferente da armazenada
-                    if (usuario.FotoPerfil == usuarioDb.FotoPerfil)
-                    {
-                        throw new Exception("A nova foto é igual à atual.");
                     }
 
                     await _usuarioRepository.AtualizarUsuarioAsync(usuario);
@@ -160,6 +173,33 @@ namespace TravelShare.Controllers
             TempData["Message"] = "Conta excluída com sucesso.";
 
             return RedirectToAction("Login", "Login");
+        }
+
+        // METODOS ADICIONAR E REMOVER CIDADE
+
+        [HttpPost]
+        public async Task<IActionResult> AddCidadeVisitada(string usuarioId, List<string> cidadesVisitadas)
+        {
+            // Buscar o usuário pelo ID
+            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
+
+            if (usuario == null)
+            {
+                TempData["Message"] = "Usuário não encontrado.";
+                return RedirectToAction("EditarPerfil");
+            }
+
+            // Mapear os dados do UsuarioModel para UsuarioSemSenhaModel
+            var usuarioSemSenha = new UsuarioSemSenhaModel
+            {
+                // Aqui você mapeia os campos necessários, como CidadesVisitadas
+                CidadesVisitadas = cidadesVisitadas
+            };
+
+            // Atualizar o usuário no repositório com o UsuarioSemSenhaModel
+            await _usuarioRepository.AtualizarUsuarioAsync(usuarioSemSenha);
+
+            return Ok(new { mensagem = "Cidades visitadas atualizadas com sucesso!" });
         }
     }
 }

@@ -27,7 +27,7 @@
                 <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguidores" asp-route-id="@Model.Id"><strong>@Model.Seguidores.Count</strong> seguidores</a>
                 <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguindo" asp-route-id="@Model.Id"><strong>@Model.Seguindo.Count</strong> seguindo</a>
             </div>
-            <p class="fw-bold mb-2">@Model.PaisNascimento</p>
+            <p class="fw-bold mb-2">@Model.CidadeDeNascimento </p>
             <p class="fw-bold mb-2">@Model.Bio</p>
         </div>
 
@@ -195,6 +195,8 @@
                                                 </form>
 
                                                 <span class="ms-2">@post.Curtidas?.Count curtidas</span>
+                                                <i class="bi bi-chat fs-5 ms-2"></i>
+                                                <span class="ms-2">@post.Comentarios.Count comentários</span>
                                             </div>
 
                                             <!-- Formulário de Adicionar Comentário -->
@@ -233,8 +235,10 @@
 
     function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: -14.2350, lng: -51.9253 }, // Centro do Brasil
-            zoom: 3
+            center: { lat: -23.55052, lng: -46.633308 }, // Exemplo de coordenada
+            zoom: 5,
+            minZoom: 3, // Ajuste conforme necessário
+            maxZoom: 30, 
         });
 
         // Lista de países visitados do usuário (contém apenas nomes dos países)

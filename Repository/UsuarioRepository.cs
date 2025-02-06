@@ -60,7 +60,7 @@ namespace TravelShare.Repository
             await _usuarioCollection.InsertOneAsync(usuario);
         }
 
-        public async Task AtualizarUsuarioAsync(UsuarioModel usuario)
+        public async Task AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario)
         {
             var usuarioDb = await BuscarUsuarioPorIdAsync(usuario.Id);
 
@@ -76,9 +76,9 @@ namespace TravelShare.Repository
                 .Set(u => u.Username, usuario.Username)
                 .Set(u => u.Email, usuario.Email)
                 .Set(u => u.DataNascimento, usuario.DataNascimento)
-                .Set(u => u.PaisNascimento, usuario.PaisNascimento)
+                .Set(u => u.CidadeDeNascimento, usuario.CidadeDeNascimento)
                 .Set(u => u.Bio, usuario.Bio ?? string.Empty)
-                .Set(u => u.LocalizacaoAtual, usuario.LocalizacaoAtual ?? string.Empty);
+                .Set(u => u.CidadesVisitadas, usuario.CidadesVisitadas);
 
             // Atualizar o documento na coleção
             var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);

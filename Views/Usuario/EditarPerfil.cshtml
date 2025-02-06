@@ -1,4 +1,4 @@
-﻿@model UsuarioModel
+﻿@model UsuarioSemSenhaModel
 
 <div class="container pt-2 pb-5">
     <!-- Card Centralizado -->
@@ -10,16 +10,14 @@
             <!-- Formulário de Edição -->
             <form asp-controller="Usuario" asp-action="EditarPerfil" method="post" enctype="multipart/form-data">
 
-                <input type="hidden" asp-for="Id"/>
+                <input type="hidden" asp-for="Id" />
 
-                <input type="hidden" asp-for="Senha" value="@ViewBag.Senha" />
-                <input type="hidden" asp-for="SenhaConfirmacao" value="@ViewBag.Senha" />
-
+               
                 <div class="row mb-3">
                     <!-- Foto do Perfil -->
                     <div class="col-md-4 text-center">
-                        <img id="profileImagePreview" src="@Url.Content(Model.FotoPerfil)" class="rounded-circle mb-3"  style="width: 200px; height: 200px; object-fit: cover;" alt="Foto do Perfil">
-                        <input type="file" class="form-control" asp-for="FotoPerfil" id="profilePicture" name="foto" required>
+                        <img id="profileImagePreview" src="@Url.Content(Model.FotoPerfil)" class="rounded-circle mb-3" style="width: 200px; height: 200px; object-fit: cover;" alt="Foto do Perfil">
+                        <input type="file" class="form-control" asp-for="FotoPerfil" id="profilePicture" name="foto">
                     </div>
 
                     <!-- Nome e Username -->
@@ -32,8 +30,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="username" class="form-label">Nome de Usuário</label>
-                                <input type="text" class="form-control" asp-for="Username"  id="username" name="username"  required>
-                                                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
+                                <input type="text" class="form-control" asp-for="Username" id="username" name="username" required>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
                             </div>
                         </div>
 
@@ -56,29 +54,70 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="PaisNascimento" class="form-label">Lugar de Nascimento</label>
-                                <input type="text" class="form-control" asp-for="PaisNascimento" id="PaisNascimento" name="PaisNascimento">
-                                <span class="text-danger">@Html.ValidationMessageFor(x => x.PaisNascimento)</span>
+                                <input type="text" class="form-control cities-autocomplete" asp-for="CidadeDeNascimento">
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadeDeNascimento)</span>
 
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="localizacaoAtual" class="form-label">Localização Atual</label>
-                                <input type="text" class="form-control" asp-for="LocalizacaoAtual" id="localizacaoAtual" name="localizacaoAtual" >
-                            </div>
-                            <div class="col-12 mb-3">
-                                <label for="bio" class="form-label">Biografia</label>
-                                <textarea class="form-control" asp-for="Bio" id="bio" name="bio" rows="2">@Model.Bio</textarea>
                             </div>
                         </div>
                     </div>
                 </div>
 
+
+
+                <div class="form-group mb-3">
+                    <label for="bio" class="form-label">Biografia</label>
+                    <textarea class="form-control" asp-for="Bio" id="bio" name="bio" rows="2">@Model.Bio</textarea>
+                </div>
+
+
+                <label for="paisNascimento" class="form-label">Lugar de Nascimento</label>
+                <input type="text" class="form-control" id="paisNascimento" name="PaisNascimento" autocomplete="off">
+
+
                 <!-- Botão de Salvar -->
                 <div class="text-end">
-                    <button type="submit" class="btn btn-dark w-50">Salvar Alterações</button>
+                    <button type="submit" class="btn btn-dark w-50" onclick="adicionarCidade(event)">Salvar Alterações</button>
                 </div>
 
             </form>
         </div>
+
+
+        <h5>Editar Mapa</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <form asp-controller="Usuario" asp-action="AddCidadeVisitada" method="post">
+                    <label for="CidadesVisitadas" class="form-label">Lugar de Nascimento</label>
+                    <input type="hidden" name="usuarioId" value="@Model.Id" />
+                    <input type="text" class="form-control cities-autocomplete" name="cidadesVisitadas " id="CidadesVisitadas">
+                    <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadesVisitadas)</span>
+                    <button type="submit" id="salvarCidades" class="btn btn-dark w-50">Salvar Cidades Visitadas</button>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.CidadesVisitadas != null && Model.CidadesVisitadas.Any())
+        {
+            <ul>
+                @foreach (var cidade in Model.CidadesVisitadas)
+                {
+                    <li>@cidade</li>
+                    <form asp-controller="Usuario" asp-action="AddCidadeVisitada" method="post">
+                        <input type="hidden" class="form-control cities-autocomplete" name="cidadesVisitadas " id="CidadesVisitadas">
+                        <i class="bi bi-trash"></i>
+
+                    </form>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>Adicione uma cidade no mapa.</p>
+        }
+
+
+
+
 
         <div class="row mb-3">
             <h3 class="text-start mb-4">Configurações da Conta</h3>
@@ -105,6 +144,7 @@
                 <p>Tem certeza de que deseja excluir sua conta? Esta ação não pode ser desfeita.</p>
                 <div class="text-center">
                     <form asp-controller="Usuario" asp-action="DeletarConta" method="post">
+
                         <input type="hidden" id="usuarioId" name="id" value="@Model.Id">
                         <button type="submit" class="btn btn-danger w-100">Desejo excluir minha conta.</button>
                     </form>
@@ -114,16 +154,60 @@
         </div>
     </div>
 </div>
+
+
+
 <script>
-        document.getElementById('profilePicture').addEventListener('change', function (event) {
-            var reader = new FileReader();
+    document.getElementById('profilePicture').addEventListener('change', function (event) {
+        var reader = new FileReader();
 
         reader.onload = function () {
             document.getElementById('profileImagePreview').src = reader.result; // Atualiza a imagem exibida
-            };
+        };
 
-            if (event.target.files.length > 0) {
+        if (event.target.files.length > 0) {
             reader.readAsDataURL(event.target.files[0]); // Lê a nova imagem
-            }
-        });
+        }
+    });
+
+    function salvarCidadesVisitadas() {
+        const usuarioId = '@Model.Id'; // Pega o ID do usuário do Razor
+        const cidadesVisitadasInput = document.getElementById('CidadesVisitadas');
+        let cidadesVisitadas = [];
+
+        // Verificar se o campo contém algo
+        try {
+            cidadesVisitadas = JSON.parse(cidadesVisitadasInput.value); // Se for uma string JSON válida
+        } catch (error) {
+            // Caso não seja, você pode tratar o erro, talvez mostrar uma mensagem
+            console.error('Erro ao interpretar cidades visitadas:', error);
+        }
+
+        // Caso o input seja de autocomplete, você pode usar algo como:
+        if (cidadesVisitadasInput.value !== '') {
+            // Suponha que você extrai o nome da cidade do objeto do autocomplete
+            cidadesVisitadas.push(cidadesVisitadasInput.value);
+        }
+
+        fetch('/Usuario/AtualizarCidadesVisitadas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: usuarioId,
+                cidadesVisitadas: cidadesVisitadas
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mensagem); // Exibe mensagem de sucesso
+            })
+            .catch(error => console.error('Erro ao atualizar cidades visitadas:', error));
+    }
+
+    // Chamar essa função ao clicar em "Salvar"
+    document.getElementById('salvarCidades').addEventListener('click', salvarCidadesVisitadas);
+
+
 </script>

@@ -14,7 +14,7 @@ namespace TravelShare.Repository.Interfaces
 
         Task AddUsuarioAsync(UsuarioModel usuario);
 
-        Task AtualizarUsuarioAsync(UsuarioModel usuario);
+        Task AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario);
 
         Task<bool> DeletarUsuarioAsync(string id);
     }

@@ -25,4 +25,4 @@ window.addEventListener('DOMContentLoaded', event => {
 
 $('.close-alert').click(function () {
     $(".alert").hide('hide')
-};
+});
