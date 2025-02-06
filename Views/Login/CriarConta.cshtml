@@ -1,0 +1,90 @@
+﻿@model UsuarioModel
+
+@{
+    Layout = "_LayoutDeslogado";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header">
+                    <h3 class="text-center font-weight-light my-4">Criar Conta</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Login" asp-action="CriarConta" method="post">
+                        <div class="text-danger">
+                            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3 mb-md-0">
+                                    <input class="form-control" asp-for="Nome" id="Nome" type="text" />
+                                    <label for="Nome">Nome</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Nome)</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input class="form-control" asp-for="Username" id="Username" type="text" />
+                                    <label for="Username">Username</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" asp-for="Email" id="Email" type="email" />
+                            <label for="Email">Email</label>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Email)</span>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3 mb-md-0">
+                                    <input class="form-control" asp-for="DataNascimento" id="DataNascimento" type="date" />
+                                    <label for="DataNascimento">Data de Nascimento</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3 mb-md-0">
+                                    <input class="form-control" asp-for="PaisNascimento" id="PaisNascimento" type="text" />
+                                    <label for="PaisNascimento">Lugar de Nascimento</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.PaisNascimento)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3 mb-md-0">
+                                    <input class="form-control" asp-for="Senha" id="Senha" type="password" />
+                                    <label for="Senha">Senha</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3 mb-md-0">
+                                    <input class="form-control" asp-for="SenhaConfirmacao" id="SenhaConfirmacao" type="password" />
+                                    <label for="SenhaConfirmacao">Senha Confirmação</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.SenhaConfirmacao)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 mb-0">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-dark w-100">Criar Conta</button>
+                            </div>
+                        </div>
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <a asp-controller="Login" asp-action="Login">Tem uma conta? Faça Login!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

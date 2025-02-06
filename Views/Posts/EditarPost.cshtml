@@ -1,0 +1,130 @@
+﻿@model PostsModel
+
+<div class="container-fluid mt-5 py-xxl-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header text-white text-center">
+                    <h3>Editar Post</h3>
+                </div>
+                <div class="card-body pt-4">
+                    <form asp-controller="Posts" asp-action="EditarPost" method="post" enctype="multipart/form-data" id="formPost">
+
+                        <!-- ID do Post -->
+                        <input type="hidden" asp-for="Id" />
+
+                        <input type="hidden" asp-for="UsuarioId" value="@ViewBag.UsuarioId" />
+
+                        <!-- Pré-visualização das Imagens Existentes -->
+                        <div id="currentImagePreview" class="text-center my-3">
+                            @if (Model?.FotoPost != null && Model.FotoPost.Any())
+                            {
+                                foreach (var foto in Model.FotoPost)
+                                {
+                                    <img src="@Url.Content(foto)" class="img-fluid m-1" style="max-height: 200px;" />
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted">Nenhuma imagem adicionada.</p>
+                            }
+                        </div>
+
+                        <!-- Input de Imagem -->
+                        <div class="form-group mb-3">
+                            <label for="FotoPost" class="form-label">Adicionar Novas Fotos (máximo 10 arquivos)</label>
+                            <input type="file" class="form-control" asp-for="FotoPost" id="FotoPost" name="FotoPost" multiple>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.FotoPost) </span>
+                            <small class="text-muted" id="fileWarning"></small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="Localizacao" class="form-label">Localização</label>
+                            <input type="text" class="form-control" asp-for="Localizacao" id="Localizacao" name="Localizacao">
+                        </div>
+
+                        <!-- Input de Legenda -->
+                        <div class="form-group mb-3">
+                            <label for="Legenda" class="form-label">Legenda</label>
+                            <input type="text" class="form-control" asp-for="Legenda" id="Legenda" name="Legenda" rows="2">
+                        </div>
+
+                        <!-- Botão para Salvar -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-secondary btn-md w-100">Salvar Alterações</button>
+                           
+                        </div>
+
+                        <!-- Botão para abrir o modal de confirmação -->
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-secondary w-100" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-id="@Model.Id">
+                                <i class="bi bi-trash"></i>Excluir Post
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza de que deseja excluir este post? Esta ação não poderá ser desfeita.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form asp-controller="Posts" asp-action="DeletarPost" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById("FotoPost").addEventListener("change", function () {
+        const files = this.files;
+        const maxFiles = 10;
+        const warning = document.getElementById("fileWarning");
+        const imagePreviewContainer = document.getElementById("currentImagePreview");
+
+        // Limpar pré-visualizações anteriores
+        imagePreviewContainer.innerHTML = "";
+
+        if (files.length > maxFiles) {
+            warning.textContent = `Você pode adicionar no máximo ${maxFiles} arquivos.`;
+            this.value = ""; // Limpa os arquivos selecionados
+        } else {
+            warning.textContent = ""; // Limpa qualquer aviso anterior
+
+            // Verifica se pelo menos uma imagem foi selecionada
+            if (files.length > 0) {
+                Array.from(files).forEach((file) => {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        const image = document.createElement("img");
+                        image.src = e.target.result;
+                        image.classList.add("img-fluid", "m-1");
+                        image.style.maxHeight = "200px"; // Define o tamanho máximo das imagens
+
+                        imagePreviewContainer.appendChild(image);
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                warning.textContent = "Por favor, selecione ao menos uma imagem.";
+            }
+        }
+    });
+</script>

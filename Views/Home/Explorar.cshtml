@@ -1,0 +1,146 @@
+﻿@using TravelShare.Helper
+@model List<PostsModel>
+
+@{
+    var usuarioLogado = ViewBag.UsuarioLogado as UsuarioModel;
+}
+
+<div class="container py-4">
+    <h3 class="text-center mb-4">Explorar</h3>
+
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        @foreach (var post in Model)
+        {
+            <div class="col">
+                <div class="card shadow-sm border-0">
+                    <!-- Imagem do Post -->
+                    @foreach (var foto in post.FotoPost.Take(1))
+                    {
+                        <img src="@Url.Content(foto)" class="card-img-top" alt="Imagem do Post" style="object-fit: cover; height: 200px;" data-bs-toggle="modal"
+                             data-bs-target="#postModal_@post.Id">
+
+                    }
+
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <!-- Foto do Usuário -->
+                            <img src="@Url.Content(post.Usuario.FotoPerfil)" class="rounded-circle" width="30" height="30" alt="Foto do Usuário">
+                            <div class="ms-3">
+                                <p class="mb-0"><strong>@post.Usuario.Nome</strong></p>
+                                <p class="mb-0 text-muted">@post.Usuario.Username</p>
+                                <p class="mb-0 text-muted">@post.Usuario.PaisNascimento</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Modal do Post -->
+            <div class="modal fade" id="postModal_@post.Id" tabindex="-1" aria-labelledby="postModalLabel_@post.Id" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-body p-0">
+                            <div class="row g-0">
+                                <!-- Carrossel de Imagens -->
+                                <div class="col-md-7">
+                                    <div id="carouselPostImages_@post.Id" class="carousel slide h-100" data-bs-ride="carousel">
+                                        <div class="carousel-inner h-100">
+                                            @foreach (var foto in post.FotoPost)
+                                            {
+                                                <div class="carousel-item @(foto == post.FotoPost.First() ? "active" : "") h-100">
+                                                    <img src="@Url.Content(foto)" class="d-block w-100 h-100" alt="Imagem do Post" style="object-fit: cover;">
+                                                </div>
+                                            }
+                                        </div>
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                            <span class="visually-hidden">Anterior</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                            <span class="visually-hidden">Próximo</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Informações do Post -->
+                                <div class="col-md-5 d-flex flex-column">
+                                    <!-- Header do Post -->
+                                    <div class="d-flex align-items-center border-bottom p-3">
+                                        <img src="@Url.Content(post.Usuario.FotoPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                        <h6 class="ms-2 mb-0 fw-bold">@post.Usuario.Nome</h6>
+                                        <p class="mb-1">@post.Localizacao</p>
+                                        <p class="mb-0 text-muted ms-auto">@post.DataCriacao?.TempoDecorridoPost()</p>
+                                    </div>
+
+                                    <!-- Legenda e Comentários -->
+                                    <div class="flex-grow-1 p-3 overflow-auto">
+                                        <!-- Legenda -->
+                                        <div>
+                                            <p class="mb-1"><strong>@@@post.Usuario.Username</strong> @post.Legenda</p>
+                                        </div>
+
+                                        <!-- Comentários -->
+                                        <div class="mt-3">
+                                            @if (post.Comentarios.Any())
+                                            {
+                                                @foreach (var comentario in post.Comentarios)
+                                                {
+                                                    <div class="mb-2">
+                                                        <p class="mb-0"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
+                                                        @if (usuarioLogado.Id == post.UsuarioId.ToString() || comentario.UsuarioId == usuarioLogado.Id)
+                                                        {
+                                                            <form asp-controller="Comentario" asp-action="DeletarComentario" method="post">
+                                                                <input type="hidden" name="id" value="@comentario.Id" />
+                                                                <button type="submit" class="btn"> <i class="bi bi-trash"></i></button>
+                                                            </form>
+                                                        }
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p class="text-muted">Nenhum comentário ainda.</p>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Área de Interações -->
+                                    <div class="border-top p-3">
+                                        <!-- Botão de Curtida -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <form asp-controller="Curtida" asp-action="CurtirEDescurtir" method="post">
+                                                <input type="hidden" name="postId" value="@post.Id" />
+                                                <input type="hidden" name="usuarioId" value="@usuarioLogado.Id" />
+
+                                                <button type="submit" class="btn p-0 @(post.Curtidas != null && post.Curtidas.Contains(@usuarioLogado.Id) ? "text-danger" : "text-dark")">
+                                                    <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(@usuarioLogado.Id) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                                </button>
+                                            </form>
+
+                                            <span class="ms-2">@post.Curtidas?.Count curtidas</span>
+                                        </div>
+
+                                        <!-- Formulário de Adicionar Comentário -->
+                                        <form asp-controller="Comentario" asp-action="AddComentario" method="post" class="d-flex">
+                                            <input type="hidden" name="PostId" value="@post.Id" />
+                                            <input type="hidden" name="UsuarioId" value="@usuarioLogado.Id" />
+                                            <div class="input-group">
+                                                <i class="bi bi-chat input-group-text"></i>
+                                                <input type="text" name="Comentario" class="form-control me-2" placeholder="Adicionar um comentário..." required />
+                                                <button type="submit" class="btn">Publicar</button>
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        }
+    </div>
+</div>

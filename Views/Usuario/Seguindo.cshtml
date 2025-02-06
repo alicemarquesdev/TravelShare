@@ -1,0 +1,60 @@
+﻿@model List<UsuarioModel>
+
+@{
+    var usuarioId = ViewBag.UsuarioId as string;
+    var UsuarioLogadoId = ViewBag.UsuarioLogadoId as string;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title text-center">Seguindo</h4>
+                    <!-- Início do Card de Usuário -->
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var seguidor in Model)
+                        {
+                            <div class="row d-flex flex-nowrap overflow-auto">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <!-- Foto de perfil -->
+                                            <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@seguidor.Id">
+                                                <img src="@Url.Content(seguidor.FotoPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+
+                                                <div class="ml-3">
+                                                    <h5 class="card-title m-0">@seguidor.Nome</h5>
+                                                    <small class="text-muted">@seguidor.Username</small>
+                                                    <p class="m-0 text-muted">@seguidor.PaisNascimento</p>
+                                                </div>
+                                            </a>
+                                            <!-- Botão de Seguir -->
+                                            <div class="ml-auto">
+                                                <div>
+                                                    @if (usuarioId == UsuarioLogadoId)
+                                                    { 
+                                                    <form asp-controller="Seguidor" asp-action="SeguirEDeseguir" method="post">
+                                                        <input type="hidden" name="seguindoId" value="@seguidor.Id.ToString()" />
+                                                        <input type="hidden" name="usuarioId" value="@usuarioId" />
+                                                        <button type="submit" class="btn btn-outline-secondary"> Deixar de Seguir </button>
+                                                    </form>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-center">Nenhum seguidor encontrado.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
