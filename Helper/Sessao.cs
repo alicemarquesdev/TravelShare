@@ -18,7 +18,14 @@ namespace TravelShare.Helper
 
             if (string.IsNullOrEmpty(sessaoDoUsuario)) return null;
 
-            return JsonConvert.DeserializeObject<UsuarioModel>(sessaoDoUsuario);
+            try
+            {
+                return JsonConvert.DeserializeObject<UsuarioModel>(sessaoDoUsuario);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         public void CriarSessaoDoUsuario(UsuarioModel usuario)

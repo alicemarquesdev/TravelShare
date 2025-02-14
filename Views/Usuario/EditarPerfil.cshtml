@@ -1,6 +1,10 @@
-﻿@model UsuarioSemSenhaModel
+﻿ @model UsuarioSemSenhaModel
 
-<div class="container pt-2 pb-5">
+@{
+    var cidadesVisitadas = ViewBag.CidadesVisitadas as List<string>;
+}
+
+<div class="container pt-2 mb-5">
     <!-- Card Centralizado -->
     <div class="card mx-auto py-3 px-4" style="max-width: 1000px;">
         <div class="card-body">
@@ -10,122 +14,115 @@
             <!-- Formulário de Edição -->
             <form asp-controller="Usuario" asp-action="EditarPerfil" method="post" enctype="multipart/form-data">
 
-                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Id" value="@Model.Id"/>
 
-               
                 <div class="row mb-3">
                     <!-- Foto do Perfil -->
                     <div class="col-md-4 text-center">
-                        <img id="profileImagePreview" src="@Url.Content(Model.FotoPerfil)" class="rounded-circle mb-3" style="width: 200px; height: 200px; object-fit: cover;" alt="Foto do Perfil">
-                        <input type="file" class="form-control" asp-for="FotoPerfil" id="profilePicture" name="foto">
+                        <img id="profileImagePreview" src="@Url.Content(Model.ImagemPerfil)" class="rounded-circle mb-3 border border-3 border-dark" style="width: 200px; height: 200px; object-fit: cover;" alt="Foto do Perfil">
+                        <input type="hidden" name="ImagemAtual" asp-for="ImagemPerfil"  value="@Model.ImagemPerfil">
+                        <input type="file" class="form-control" id="profilePicture" name="imagem" accept="image/png, image/jpeg, image/jpg">
                     </div>
-
-                    <!-- Nome e Username -->
+                     <!-- Nome e Username -->
                     <div class="col-md-8">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="nome" class="form-label">Nome</label>
-                                <input type="text" class="form-control" asp-for="Nome" id="nome" name="nome" required>
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="text" class="form-control" asp-for="Nome" required>
+                                <label for="Nome" class="ms-2">Nome</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.Nome)</span>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="username" class="form-label">Nome de Usuário</label>
-                                <input type="text" class="form-control" asp-for="Username" id="username" name="username" required>
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="text" class="form-control" asp-for="Username" style="text-transform: lowercase;" required>
+                                <label for="Username" class="ms-2">Username</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
                             </div>
                         </div>
 
                         <!-- Email e Data de Nascimento -->
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">E-mail</label>
-                                <input type="email" class="form-control" asp-for="Email" id="email" name="email" required>
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="email" class="form-control" asp-for="Email" style="text-transform: lowercase;" required>
+                                <label for="Email" class="ms-2">E-mail</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.Email)</span>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="dataNascimento" class="form-label">Data de Nascimento</label>
-                                <input type="date" class="form-control" asp-for="DataNascimento" id="dataNascimento" name="dataNascimento" required>
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="date" class="form-control" asp-for="DataNascimento" min="1920-01-01" max="2010-01-01" required>
+                                <label for="DataNascimento" class="ms-2">Data de Nascimento</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
-
                             </div>
                         </div>
 
-                        <!-- Lugar e Localização Atual -->
+                        <!-- Cidade de Nascimento -->
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="PaisNascimento" class="form-label">Lugar de Nascimento</label>
+                            <div class="form-floating mb-3">
                                 <input type="text" class="form-control cities-autocomplete" asp-for="CidadeDeNascimento">
+                                <label for="CidadeDeNascimento" class="ms-2">Cidade de Origem</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadeDeNascimento)</span>
-
                             </div>
                         </div>
                     </div>
                 </div>
 
-
-
-                <div class="form-group mb-3">
-                    <label for="bio" class="form-label">Biografia</label>
-                    <textarea class="form-control" asp-for="Bio" id="bio" name="bio" rows="2">@Model.Bio</textarea>
+                <!-- Bio -->
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" asp-for="Bio" rows="4"></textarea>
+                    <label for="Bio" class="ps-2">Bio</label>
+                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Bio)</span>
                 </div>
-
-
-                <label for="paisNascimento" class="form-label">Lugar de Nascimento</label>
-                <input type="text" class="form-control" id="paisNascimento" name="PaisNascimento" autocomplete="off">
-
 
                 <!-- Botão de Salvar -->
                 <div class="text-end">
-                    <button type="submit" class="btn btn-dark w-50" onclick="adicionarCidade(event)">Salvar Alterações</button>
+                    <button type="submit" class="btn btn-dark w-50">Salvar Alterações</button>
                 </div>
-
             </form>
         </div>
 
 
-        <h5>Editar Mapa</h5>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <form asp-controller="Usuario" asp-action="AddCidadeVisitada" method="post">
-                    <label for="CidadesVisitadas" class="form-label">Lugar de Nascimento</label>
-                    <input type="hidden" name="usuarioId" value="@Model.Id" />
-                    <input type="text" class="form-control cities-autocomplete" name="cidadesVisitadas " id="CidadesVisitadas">
-                    <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadesVisitadas)</span>
-                    <button type="submit" id="salvarCidades" class="btn btn-dark w-50">Salvar Cidades Visitadas</button>
-                </form>
+        <div class="row mb-3">
+            <h3 class="text-start mb-3">Editar Cidades Visitadas</h3>
+            <p class="mb-3">
+                <i class="bi bi-pin fs-6"></i> <strong>Número de cidades visitadas: </strong>    <span id="contadorCidades">@((cidadesVisitadas != null) ? cidadesVisitadas.Count : 0)</span>
+
+            </p>
+
+
+            <div id="cidadesLista" style="max-height: 250px; overflow-y: auto;">
+                @if (cidadesVisitadas != null && cidadesVisitadas.Any())
+                {
+                    foreach (var cidade in cidadesVisitadas)
+                    {
+                        <div id="cidade-@cidade" class="cidade-item d-flex align-items-center">
+                            <p class="me-2">@cidade</p>
+                            <button type="submit" class="border-0 bg-transparent ms-auto removerCidade" data-cidade="@cidade">
+                                <i class="bi bi-trash text-dark"></i>
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p id="nenhumaCidade">Nenhuma cidade encontrada</p>
+                }
             </div>
+
+            <div class="form-floating mb-3 mt-3">
+                <input type="text" class="form-control cities-autocomplete" id="cidadeInput" name="cidade" />
+                <label for="cidadeInput" class="ms-2">Adicione uma cidade:</label>
+            </div>
+            <button id="adicionarCidadeBtn" class="btn btn-dark w-50 ms-auto">Adicionar</button>
         </div>
 
-        @if (Model.CidadesVisitadas != null && Model.CidadesVisitadas.Any())
-        {
-            <ul>
-                @foreach (var cidade in Model.CidadesVisitadas)
-                {
-                    <li>@cidade</li>
-                    <form asp-controller="Usuario" asp-action="AddCidadeVisitada" method="post">
-                        <input type="hidden" class="form-control cities-autocomplete" name="cidadesVisitadas " id="CidadesVisitadas">
-                        <i class="bi bi-trash"></i>
-
-                    </form>
-                }
-            </ul>
-        }
-        else
-        {
-            <p>Adicione uma cidade no mapa.</p>
-        }
 
 
 
-
-
-        <div class="row mb-3">
+        <!-- Configurações da Conta -->
+        <div class="row mb-3 my-2">
             <h3 class="text-start mb-4">Configurações da Conta</h3>
             <div class="row mb-3">
-
                 <!-- Desativar Conta -->
                 <div class="col-12 mb-3">
-                    <button class="btn btn-dark w-100" data-bs-toggle="modal" data-bs-target="#desativarContaModal" data-id="@Model.Id">Excluir Conta</button>
+                    <a class="btn btn-dark w-100" asp-controller="AlterarSenha" asp-action="AlterarSenha" asp-route-id="@Model.Id">Alterar Senha</a>
+                    <button class="btn btn-dark w-100 mt-2" data-bs-toggle="modal" data-bs-target="#desativarContaModal" data-id="@Model.Id">Excluir Conta</button>
                 </div>
             </div>
         </div>
@@ -144,9 +141,8 @@
                 <p>Tem certeza de que deseja excluir sua conta? Esta ação não pode ser desfeita.</p>
                 <div class="text-center">
                     <form asp-controller="Usuario" asp-action="DeletarConta" method="post">
-
-                        <input type="hidden" id="usuarioId" name="id" value="@Model.Id">
-                        <button type="submit" class="btn btn-danger w-100">Desejo excluir minha conta.</button>
+                        <input type="hidden" name="id" value="@Model.Id">
+                        <button type="submit" class="btn btn-dark w-100">Desejo excluir minha conta.</button>
                     </form>
                     <button type="button" class="btn btn-secondary mt-1 w-100" data-bs-dismiss="modal">Cancelar</button>
                 </div>
@@ -155,59 +151,3 @@
     </div>
 </div>
 
-
-
-<script>
-    document.getElementById('profilePicture').addEventListener('change', function (event) {
-        var reader = new FileReader();
-
-        reader.onload = function () {
-            document.getElementById('profileImagePreview').src = reader.result; // Atualiza a imagem exibida
-        };
-
-        if (event.target.files.length > 0) {
-            reader.readAsDataURL(event.target.files[0]); // Lê a nova imagem
-        }
-    });
-
-    function salvarCidadesVisitadas() {
-        const usuarioId = '@Model.Id'; // Pega o ID do usuário do Razor
-        const cidadesVisitadasInput = document.getElementById('CidadesVisitadas');
-        let cidadesVisitadas = [];
-
-        // Verificar se o campo contém algo
-        try {
-            cidadesVisitadas = JSON.parse(cidadesVisitadasInput.value); // Se for uma string JSON válida
-        } catch (error) {
-            // Caso não seja, você pode tratar o erro, talvez mostrar uma mensagem
-            console.error('Erro ao interpretar cidades visitadas:', error);
-        }
-
-        // Caso o input seja de autocomplete, você pode usar algo como:
-        if (cidadesVisitadasInput.value !== '') {
-            // Suponha que você extrai o nome da cidade do objeto do autocomplete
-            cidadesVisitadas.push(cidadesVisitadasInput.value);
-        }
-
-        fetch('/Usuario/AtualizarCidadesVisitadas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: usuarioId,
-                cidadesVisitadas: cidadesVisitadas
-            })
-        })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.mensagem); // Exibe mensagem de sucesso
-            })
-            .catch(error => console.error('Erro ao atualizar cidades visitadas:', error));
-    }
-
-    // Chamar essa função ao clicar em "Salvar"
-    document.getElementById('salvarCidades').addEventListener('click', salvarCidadesVisitadas);
-
-
-</script>

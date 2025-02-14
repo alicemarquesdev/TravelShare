@@ -1,90 +1,69 @@
-﻿@using TravelShare.Helper
-@model UsuarioModel
+﻿@model UsuarioModel
 
 @{
-    var posts = ViewBag.PostsDoUsuario as List<PostsModel>;
-    var usuarioLogadoId = ViewBag.UsuarioLogado as string;
+    var posts = ViewBag.PostsDoUsuario as List<PostModel>;
+    var usuarioLogadoId = ViewBag.UsuarioLogadoId as string;
+    bool perfilDoUsuarioLogado = ViewBag.PerfilDoUsuarioLogado as bool? ?? false;
 }
 
 <div class="container mt-3">
     <div class="d-flex mb-4 position-relative">
         <!-- Foto de Perfil -->
-        <div class="me-5 ms-5">
-            <img src="@Url.Content(Model.FotoPerfil)" class="rounded-circle img-fluid border border-4 border-seondary" alt="Foto do Perfil" style="width: 200px; height: 200px; object-fit: cover;">
+        <div class="mx-4">
+            <img src="@Url.Content(Model.ImagemPerfil)" class="rounded-circle border border-4 border-dark" alt="Foto do Perfil" style="width: 200px; height: 200px; object-fit: cover;">
         </div>
 
         <!-- Informações do Usuário -->
-        <div class="mb-2">
-            <div class="d-flex align-items-start mb-1 px-0">
+        <div class="mb-1">
+            <div class="d-flex align-items-center mb-0">
                 <!-- Nome do Usuário -->
-                <h2 class="mb-0 p-0">@Model.Nome</h2>
+                <h3 class="mb-0">@Model.Nome</h3>
             </div>
-
             <p class="fw-bold mb-2">@@@Model.Username</p>
-
             <div class="d-flex gap-4 mb-2">
-                <span><strong>@posts.Count</strong> posts</span>
+                <a class="text-decoration-none text-secondary" href="#postsSection"><strong>@posts.Count</strong> posts</a>
                 <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguidores" asp-route-id="@Model.Id"><strong>@Model.Seguidores.Count</strong> seguidores</a>
                 <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguindo" asp-route-id="@Model.Id"><strong>@Model.Seguindo.Count</strong> seguindo</a>
+                <span><strong>@Model.CidadesVisitadas.Count</strong> cidades no mapa</span>
             </div>
-            <p class="fw-bold mb-2">@Model.CidadeDeNascimento </p>
-            <p class="fw-bold mb-2">@Model.Bio</p>
+            <p class="mb-1">
+                <i class="bi bi-geo-alt"></i> @Model.CidadeDeNascimento
+            </p>
+            <p class="mb-2">@Model.Bio</p>
         </div>
 
-        @if (usuarioLogadoId == Model.Id.ToString())
+        @if (usuarioLogadoId == Model.Id)
         {
             <!-- Botões no canto superior direito -->
             <div class="position-absolute top-0 end-0 mt-3 me-2 d-flex">
-                <a class="btn btn-outline-secondary" asp-controller="Usuario" asp-action="EditarPerfil" asp-route-id="@Model.Id">
-                    <i class="bi bi-pencil p-1"> Perfil</i>
+                <a class="btn btn-outline-dark" asp-controller="Usuario" asp-action="EditarPerfil" asp-route-id="@Model.Id">
+                    <i class="bi bi-pencil p-1">  Perfil</i>
                 </a>
             </div>
         }
         else
         {
             <div class="d-flex mt-3 ms-5">
-                <form asp-controller="Seguidor" asp-action="SeguirEDeseguir" method="post">
-                    <input type="hidden" name="seguindoId" value="@Model.Id.ToString()" />
-                    <input type="hidden" name="usuarioId" value="@usuarioLogadoId" />
-                    @if (Model.Seguidores != null && Model.Seguidores.Contains(usuarioLogadoId))
+                <form class="seguirOuDeseguirForm" data-seguindo-id="@Model.Id.ToString()" data-usuario-id="@usuarioLogadoId" method="post">
+                    @if (Model.Seguidores == null || !Model.Seguidores.Contains(usuarioLogadoId))
                     {
-                        <button type="submit" class="btn btn-secondary"> Seguindo </button>
-
-                    }
-                    else if (Model.Seguindo != null & Model.Seguindo.Contains(usuarioLogadoId))
-                    {
-                        <button type="submit" class="btn btn-primary"> Seguir de volta </button>
-
+                        <button type="submit" class="btn btn-dark"> Seguir </button>
                     }
                     else
                     {
-                        <button type="submit" class="btn btn-danger"> Seguir </button>
+                        <button type="submit" class="btn btn-outline-dark"> Seguindo </button>
                     }
                 </form>
             </div>
+
         }
     </div>
 
-
-    <!-- Botão para alternar a exibição do Mapa -->
-    <div class="border-top border-dark pb-3 text-center gap-4">
-        <button class="btn" id="postsButton" onclick="toggleSection('postsSection')">
-            <i class="bi bi-grid-3x3-gap-fill" style="font-size: 1.2rem; color: #6c757d;"></i>
-            Publicações
-        </button>
-        <button class="btn" id="mapButton" onclick="toggleSection('mapSection')">
-            <i class="bi bi-map" style="font-size: 1.2rem; color: #6c757d;"></i>
-            Mapa
-        </button>
-    </div>
-
     <!-- Mapa -->
-    <div class="container mt-1 mb-5" id="mapSection" style="display:none;">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8">
-                <div id="map" style="height: 400px; width: 100%;"></div>
-            </div>
-        </div>
+    <div class="container mt-2 mb-3 d-flex justify-content-center border-top border-bottom border-dark" style="display:none;">
+        <div class="m-3" id="map" style="height: 350px; width: 90%;"></div>
+        <div id="dadosCidades" data-cidades='@Html.Raw(Json.Serialize(Model.CidadesVisitadas))'></div>
+        <div id="cidadeNascimento" data-cidadeNascimento="@Model.CidadeDeNascimento"></div>
     </div>
 
     <!-- Feed de Posts -->
@@ -95,8 +74,8 @@
             {
                 <div class="col-6 col-md-4">
                     <div class="position-relative">
-                        <img src="@Url.Content(post.FotoPost.FirstOrDefault() ?? "/images/default.png")"
-                             class="img-fluid rounded post-thumbnail"
+                        <img src="@Url.Content(post.ImagemPost.FirstOrDefault())"
+                             class="img-fluid rounded"
                              alt="Imagem do Post"
                              style="object-fit: cover; width: 100%; height: 350px;"
                              data-bs-toggle="modal"
@@ -112,15 +91,16 @@
                                 <div class="row g-0">
                                     <!-- Carrossel de Imagens -->
                                     <div class="col-md-7">
-                                        <div id="carouselPostImages_@post.Id" class="carousel slide h-100" data-bs-ride="carousel">
-                                            <div class="carousel-inner h-100">
-                                                @foreach (var foto in post.FotoPost)
+                                        <div id="carouselPostImages_@post.Id" class="carousel slide" data-bs-ride="carousel">
+                                            <div class="carousel-inner">
+                                                @foreach (var imagem in post.ImagemPost)
                                                 {
-                                                    <div class="carousel-item @(foto == post.FotoPost.First() ? "active" : "") h-100">
-                                                        <img src="@Url.Content(foto)" class="d-block w-100 h-100" alt="Imagem do Post" style="object-fit: cover;">
+                                                    <div class="carousel-item @(imagem == post.ImagemPost.First() ? "active" : "")">
+                                                        <img src="@Url.Content(imagem)" class="d-block w-100" alt="Imagem do Post" style="height:600px; width:600px; object-fit: cover;">
                                                     </div>
                                                 }
                                             </div>
+                                            <!-- Controles do Carrossel -->
                                             <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
                                                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                 <span class="visually-hidden">Anterior</span>
@@ -130,88 +110,94 @@
                                                 <span class="visually-hidden">Próximo</span>
                                             </button>
                                         </div>
+
                                     </div>
 
                                     <!-- Informações do Post -->
                                     <div class="col-md-5 d-flex flex-column">
                                         <!-- Header do Post -->
                                         <div class="d-flex align-items-center border-bottom p-3">
-                                            <img src="@Url.Content(Model.FotoPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                                            <h6 class="ms-2 mb-0 fw-bold">@Model.Nome</h6>
-                                            @if (Model.Id == usuarioLogadoId)
-                                            {
-                                                <a class="btn btn-outline-secondary btn-sm ms-auto" asp-controller="Posts" asp-action="EditarPost" asp-route-id="@post.Id"><i class="bi bi-pencil"> Editar</i></a>
-
-                                            }
-                                            <p class="mb-1">@post.Localizacao</p>
-                                            <p class="mb-0 text-muted ms-auto">@post.DataCriacao?.TempoDecorridoPost()</p>
+                                            <img src="@Url.Content(Model.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <div>
+                                                <h5 class="ms-3 mb-0 fw-bold">@Model.Nome</h5>
+                                                <p class="ms-3 mb-0">@post.Localizacao</p>
+                                            </div>
+                                            <div class="ms-auto">
+                                                @if (Model.Id == usuarioLogadoId)
+                                                {
+                                                    <a class="btn btn-outline-dark btn-sm ms-auto" asp-controller="Post" asp-action="EditarPost" asp-route-id="@post.Id"><i class="bi bi-pencil"> Editar</i></a>
+                                                }
+                                            </div>
                                         </div>
 
                                         <!-- Legenda e Comentários -->
                                         <div class="flex-grow-1 p-3 overflow-auto">
                                             <!-- Legenda -->
                                             <div>
-                                                <p class="mb-1"><strong>@@@Model.Username</strong> @post.Legenda</p>
+                                                <p class="mb-1"><strong>@Model.Username</strong> @post.Legenda</p>
                                             </div>
 
                                             <!-- Comentários -->
-                                            <div class="mt-3">
+                                            <div class="comentariosLista mt-3" data-post-id="@post.Id" style="max-height: 320px; overflow-y: auto; word-wrap: break-word;">
                                                 @if (post.Comentarios.Any())
                                                 {
                                                     foreach (var comentario in post.Comentarios)
                                                     {
-                                                        <div class="mb-2">
-                                                            <p class="mb-0"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
+                                                        <div id="comentario-@comentario.Id" class="mb-2" style="position: relative;">
+                                                            <p class="mb-0 ps-2" style="white-space: pre-wrap;"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
 
-                                                            @if (usuarioLogadoId == Model.Id.ToString() || comentario.UsuarioId == usuarioLogadoId)
+                                                            @if (usuarioLogadoId == Model.Id || comentario.UsuarioId == usuarioLogadoId)
                                                             {
-                                                                <form asp-controller="Comentario" asp-action="DeletarComentario" method="post">
+                                                                <form class="deleteComentarioForm" method="post" style="position: absolute; top: 0; right: 0;">
                                                                     <input type="hidden" name="id" value="@comentario.Id" />
-                                                                    <button type="submit" class="btn"> <i class="bi bi-trash"></i></button>
+                                                                    <button type="submit" class="border-0 bg-transparent">
+                                                                        <i class="bi bi-trash text-secondary"></i>
+                                                                    </button>
                                                                 </form>
                                                             }
-
                                                         </div>
                                                     }
                                                 }
-                                                else
-                                                {
-                                                    <p class="text-muted">Nenhum comentário ainda.</p>
-                                                }
                                             </div>
+
+
                                         </div>
 
                                         <!-- Área de Interações -->
                                         <div class="border-top p-3">
                                             <!-- Botão de Curtida -->
-                                            <div class="d-flex align-items-center mb-2">
-                                                <form asp-controller="Curtida" asp-action="CurtirEDescurtir" method="post">
-                                                    <input type="hidden" name="postId" value="@post.Id" />
-                                                    <input type="hidden" name="usuarioId" value="@Model.Id" />
+                                            <div class="d-flex align-items-center mb-3">
 
-                                                    <button type="submit" class="btn p-0 @(post.Curtidas != null && post.Curtidas.Contains(Model.Id) ? "text-danger" : "text-dark")">
-                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(Model.Id) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                                <form class="d-inline">
+                                                    <input type="hidden" name="postId" value="@post.Id" />
+                                                    <button type="button"
+                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(usuarioLogadoId) ? "text-danger" : "text-secondary")"
+                                                            data-post-id="@post.Id">
+                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(usuarioLogadoId) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
                                                     </button>
                                                 </form>
 
                                                 <span class="ms-2">@post.Curtidas?.Count curtidas</span>
                                                 <i class="bi bi-chat fs-5 ms-2"></i>
                                                 <span class="ms-2">@post.Comentarios.Count comentários</span>
+                                                <p class="mb-0 text-muted ms-auto">@post.DataCriacao.TempoDecorridoPost()</p>
+
                                             </div>
 
                                             <!-- Formulário de Adicionar Comentário -->
-                                            <form asp-controller="Comentario" asp-action="AddComentario" method="post" class="d-flex">
-                                                <input type="hidden" name="PostId" value="@post.Id" />
-                                                <input type="hidden" name="UsuarioId" value="@Model.Id" />
+                                            <form class="addComentarioForm d-flex">
+                                                <input type="hidden" name="postId" value="@post.Id" />
                                                 <div class="input-group">
-                                                    <i class="bi bi-chat input-group-text"></i>
-                                                    <input type="text" name="Comentario" class="form-control me-2" placeholder="Adicionar um comentário..." required />
-                                                    <button type="submit" class="btn">Publicar</button>
+                                                    <span class="input-group-text text-secondary"><i class="bi bi-chat"></i></span>
+                                                    <input type="text" name="comentario" class="form-control" placeholder="Adicionar um comentário..." maxlength="100" required />
+                                                    <button type="submit" class="btn btn-dark">Publicar</button>
                                                 </div>
                                             </form>
 
                                         </div>
+
                                     </div>
+
                                 </div>
                             </div>
                         </div>
@@ -226,56 +212,4 @@
             </div>
         }
     </div>
-    
 </div>
-
-<!-- Script do Google Maps -->
-<script>
-    let map;
-
-    function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: -23.55052, lng: -46.633308 }, // Exemplo de coordenada
-            zoom: 5,
-            minZoom: 3, // Ajuste conforme necessário
-            maxZoom: 30, 
-        });
-
-        // Lista de países visitados do usuário (contém apenas nomes dos países)
-        const paisesVisitados = @Html.Raw(Json.Serialize(ViewBag.PaisesVisitados));
-
-        if (paisesVisitados && paisesVisitados.length > 0) {
-            const geocoder = new google.maps.Geocoder();
-
-            paisesVisitados.forEach(pais => {
-                // Geocodificando o nome do país para latitude e longitude
-                geocoder.geocode({ 'address': pais }, function (results, status) {
-                    if (status === 'OK') {
-                        const latitude = results[0].geometry.location.lat();
-                        const longitude = results[0].geometry.location.lng();
-
-                        // Criando um marcador no mapa para o país geocodificado
-                        new google.maps.Marker({
-                            position: { lat: latitude, lng: longitude },
-                            map,
-                            title: pais
-                        });
-                    } else {
-                        console.log('Geocoding failed for the following reason: ' + status);
-                    }
-                });
-            });
-        }
-    }
-
-    function toggleSection(sectionId) {
-        document.getElementById('mapSection').style.display = 'none';
-        document.getElementById('postsSection').style.display = 'none';
-        document.getElementById(sectionId).style.display = 'block';
-
-        if (sectionId === 'mapSection' && map) {
-            google.maps.event.trigger(map, 'resize');
-        }
-    }
-</script>
-

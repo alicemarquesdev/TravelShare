@@ -8,8 +8,8 @@ namespace TravelShare.Repository.Interfaces
 
         Task<List<ComentarioModel>> BuscarTodosOsComentariosDoPostAsync(string postId);
 
-        Task AddComentario(ComentarioModel comentario);
+        Task AddComentarioAsync(ComentarioModel comentario);
 
-        Task<bool> DeletarComentario(string id);
+        Task<bool> DeletarComentarioAsync(string id);
     }
 }

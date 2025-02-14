@@ -11,14 +11,14 @@
                     <div class="small mb-3 text-muted">
                         Digite seu endereço de e-mail e nós enviaremos um link para redefinir sua senha.
                     </div>
-                    <form>
+                    <form asp-controller="Login" asp-action="EnviarLinkParaRedefinirSenha" method="post">
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="Email" type="email" />
+                            <input class="form-control" id="Email" name="email" type="email" />
                             <label for="inputEmail">Digite seu Email</label>
                         </div>
                         <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
                             <a class="small" asp-controller="Login" asp-action="Login">Efetuar Login.</a>
-                            <a class="btn btn-dark" href="login.html">Enviar</a>
+                            <button type="submit" class="btn btn-dark">Enviar</button>
                         </div>
                     </form>
                 </div>

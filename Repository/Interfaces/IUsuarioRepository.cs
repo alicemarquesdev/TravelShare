@@ -7,15 +7,24 @@ namespace TravelShare.Repository.Interfaces
         Task<UsuarioModel> BuscarUsuarioPorIdAsync(string id);
 
         Task<List<UsuarioModel>> BuscarVariosUsuariosPorIdAsync(List<string> ids);
+        Task<List<UsuarioModel>> BuscarTodosOsUsuariosAsync();
 
-        Task<List<UsuarioModel>> BuscarSugestoesParaSeguir(string id);
+        Task<List<UsuarioModel>> BuscarSugestoesParaSeguirAsync(string id);
 
-        Task<UsuarioModel> BuscarUsuarioPorEmailOuUsername(string emailOuUsername);
+        Task<UsuarioModel> BuscarUsuarioPorEmailOuUsernameAsync(string emailOuUsername);
+
+        // Barra de Pesquisa.
+        Task<List<UsuarioModel>> PesquisarUsuariosAsync(string termo);
 
         Task AddUsuarioAsync(UsuarioModel usuario);
 
-        Task AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario);
+        Task<bool> AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario);
 
         Task<bool> DeletarUsuarioAsync(string id);
+
+
+        // Senha
+
+        Task<bool> RedefinirSenha(string id, string novaSenha);
     }
 }

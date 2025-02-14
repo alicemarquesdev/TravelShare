@@ -1,60 +1,71 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TravelShare.Filters;
 using TravelShare.Helper;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Controllers
 {
+    [PaginaParaUsuarioDeslogado]
     public class LoginController : Controller
     {
+        private readonly IUsuarioRepository _usuarioRepository;
         private readonly ISessao _sessao;
-        private readonly IUsuarioRepository _usuarioRepositorio;
+        private readonly IEmail _email;
+        private readonly IAlterarSenhaRepository _alterarSenhaRepository;
 
-        public LoginController(IUsuarioRepository usuarioRepositorio, ISessao sessao)
+        public LoginController(IUsuarioRepository usuarioRepository, ISessao sessao, IEmail email, IAlterarSenhaRepository alterarSenhaRepository)
         {
-            _usuarioRepositorio = usuarioRepositorio;
+            _usuarioRepository = usuarioRepository;
             _sessao = sessao;
+            _email = email;
+            _alterarSenhaRepository = alterarSenhaRepository;
+        }
+
+        public IActionResult Index()
+        {
+            return View();
         }
 
         public IActionResult Login()
         {
-            if (_sessao.BuscarSessaoDoUsuario() != null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
             return View();
         }
 
         public IActionResult CriarConta()
         {
-            if (_sessao.BuscarSessaoDoUsuario() != null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
             return View();
         }
 
         public IActionResult RedefinirSenha()
         {
-            if (_sessao.BuscarSessaoDoUsuario() != null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
             return View();
         }
 
-        public IActionResult Sair()
-        {
-            _sessao.RemoverSessaoUsuario();
-            return RedirectToAction("Login", "Login");
-        }
+
 
         [HttpPost]
         public async Task<IActionResult> CriarConta(UsuarioModel usuario)
         {
             if (ModelState.IsValid)
             {
-                await _usuarioRepositorio.AddUsuarioAsync(usuario);
+                var emailExistente = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(usuario.Email);
+                var usernameExistente = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(usuario.Username);
+
+                if (emailExistente != null)
+                {
+                    // Se já existir, exibe uma mensagem de erro
+                    TempData["Message"] = "Já existe uma conta com esse email.";
+                    return View(usuario);
+                }
+                if (usernameExistente != null)
+                {
+                    // Se já existir, exibe uma mensagem de erro
+                    TempData["Message"] = "Já existe uma conta com esse username.";
+                    return View(usuario);
+                }
+
+                await _usuarioRepository.AddUsuarioAsync(usuario);
                 TempData["Message"] = "Conta criada com sucesso! Agora você pode efetuar o login.";
                 return RedirectToAction("Login");
             }
@@ -65,30 +76,63 @@ namespace TravelShare.Controllers
         [HttpPost]
         public async Task<IActionResult> Entrar(LoginModel loginmodel)
         {
-            try
+            if (ModelState.IsValid)
             {
-                if (ModelState.IsValid)
+                var usuario = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(loginmodel.EmailOuUsername);
+
+                if (usuario != null)
                 {
-                    var usuario = await _usuarioRepositorio.BuscarUsuarioPorEmailOuUsername(loginmodel.EmailOuUsername);
-                    if (usuario != null)
+                    if (usuario.SenhaValida(loginmodel.Senha))
                     {
-                        if (usuario.SenhaValida(loginmodel.Senha))
-                        {
-                            _sessao.CriarSessaoDoUsuario(usuario);
-                            return RedirectToAction("Index", "Home");
-                        }
-                        TempData["Message"] = $"Senha do usuário é inválida, tente novamente.";
+                        _sessao.CriarSessaoDoUsuario(usuario);
+                        return RedirectToAction("Index", "Home");
                     }
-                    TempData["Message"] = $"Usuário não encontrado, tente novamente.";
+                    TempData["Message"] = $"Senha inválida, tente novamente.";
                 }
-                TempData["Message"] = $"Os dados não são válidos, tente novamente.";
-                return View("Login");
+                TempData["Message"] = $"Usuário não encontrado, tente novamente.";
             }
-            catch (Exception ex)
-            {
-                TempData["Message"] = $"Ops, não conseguimos realizar seu login: {ex.Message}";
-                return RedirectToAction("Login");
-            }
+
+            TempData["Message"] = $"Os dados não são válidos, tente novamente.";
+            return View("Login");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> EnviarLinkParaRedefinirSenha(string email)
+        {
+            var usuarioDb = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(email);
+
+            if (usuarioDb != null)
+            {
+
+                string novaSenha = usuarioDb.GerarNovaSenha();
+
+                string mensagem = $"Olá {usuarioDb.Nome},<br><br>Sua nova senha é: <strong>{novaSenha}</strong><br><br>Altere sua senha assim que possível.";
+                var emailEnviado = await _email.EnviarEmailAsync(usuarioDb.Email, "Redefinição de Senha - TravelShare", mensagem);
+
+                if (emailEnviado)
+                {
+                    
+                    var senhaAlterada = await _usuarioRepository.RedefinirSenha(usuarioDb.Id, novaSenha);
+
+                    if (senhaAlterada)
+                    {
+                        TempData["Message"] = $"Enviamos para seu e-mail cadastrado uma nova senha.";
+                        return RedirectToAction("Login", "Login");
+
+                    }
+
+                    TempData["Message"] = $"Não conseguimos enviar e-mail. Por favor, tente novamente.";
+                    return RedirectToAction("Login", "Login");
+
+                }
+
+                TempData["Message"] = $"Email inválido, tente novamente.";
+                return View("RedefinirSenha");
+            }
+
+            TempData["Message"] = $"Os dados não são válidos, tente novamente.";
+            return RedirectToAction("Login", "Login");
+        }
+
     }
 }

@@ -12,15 +12,15 @@
             }
             else if (tempoPassado.TotalMinutes < 60)
             {
-                return $"{(int)tempoPassado.TotalMinutes} minutos atrás";
+                return $"{(int)tempoPassado.TotalMinutes} minutos";
             }
             else if (tempoPassado.TotalHours < 24)
             {
-                return $"{(int)tempoPassado.TotalHours} minutos atrás";
+                return $"{(int)tempoPassado.TotalHours} horas";
             }
             else if (tempoPassado.TotalDays < 7)
             {
-                return $"{(int)tempoPassado.TotalDays} dias atrás";
+                return $"{(int)tempoPassado.TotalDays} dias";
             }
             else
             {

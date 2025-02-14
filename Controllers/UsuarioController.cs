@@ -1,97 +1,86 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TravelShare.Filters;
 using TravelShare.Helper;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Controllers
 {
+    [PaginaParaUsuarioLogado]
     public class UsuarioController : Controller
     {
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPostRepository _postRepository;
-        private readonly IComentarioRepository _comentarioRepository;
-        private readonly ISessao _sessao;
         private readonly ICaminhoImagem _caminhoImagem;
-        private readonly ICurtidaRepository _curtidaRepository;
+        private readonly ISessao _sessao;
 
-        public UsuarioController(IUsuarioRepository usuarioRepository, ISessao sessao, IPostRepository postRepository,
-                                    ICaminhoImagem caminhoImagem, IComentarioRepository comentarioRepository,
-                                     ICurtidaRepository curtidaRepository)
+        public UsuarioController(IUsuarioRepository usuarioRepository, IPostRepository postRepository,
+                                 ICaminhoImagem caminhoImagem, ISessao sessao)
         {
             _usuarioRepository = usuarioRepository;
-            _comentarioRepository = comentarioRepository;
-            _sessao = sessao;
             _postRepository = postRepository;
             _caminhoImagem = caminhoImagem;
-            _curtidaRepository = curtidaRepository;
+            _sessao = sessao;
         }
 
+     
         public async Task<IActionResult> Perfil(string id)
         {
             var usuarioLogado = _sessao.BuscarSessaoDoUsuario();
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
+            var usuarioPerfil = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
-            if (usuario == null || usuarioLogado == null)
-            {
-                return RedirectToAction("Login", "Login");
-            }
+            bool perfilDoUsuarioLogado = usuarioLogado == usuarioPerfil;
 
-            bool perfilLogado = usuarioLogado == usuario;
+            ViewBag.PerfilDoUsuarioLogado = perfilDoUsuarioLogado;
+            ViewBag.UsuarioLogadoId = usuarioLogado.Id;
+            ViewBag.PostsDoUsuario = await _postRepository.BuscarTodosOsPostsDoUsuarioAsync(usuarioPerfil.Id);
 
-            ViewBag.PerfilLogado = perfilLogado;
-            ViewBag.UsuarioLogado = usuarioLogado.Id.ToString();
-
-            ViewBag.PostsDoUsuario = await _postRepository.BuscarTodosOsPostsDoUsuarioAsync(usuario.Id);
-            ViewBag.PaisesVisitados = usuario.CidadesVisitadas.ToList();
-
-            return View(usuario);
+            return View(usuarioPerfil);
         }
 
         public async Task<IActionResult> EditarPerfil(string id)
         {
-            // Buscar o usuário pelo ID
             var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
             if (usuario == null)
             {
                 TempData["Message"] = "Usuário não encontrado.";
-                return RedirectToAction("Index"); // Ou para uma página de erro
+                return RedirectToAction("Index", "Home");
             }
 
-            // Mapear os dados de UsuarioModel para UsuarioSemSenhaModel
             var usuarioSemSenha = new UsuarioSemSenhaModel
             {
+                Id =  usuario.Id,
                 Nome = usuario.Nome,
                 Username = usuario.Username,
                 Email = usuario.Email,
                 DataNascimento = usuario.DataNascimento,
                 CidadeDeNascimento = usuario.CidadeDeNascimento,
                 Bio = usuario.Bio,
-                CidadesVisitadas = usuario.CidadesVisitadas,
-                Seguindo = usuario.Seguindo,
-                Seguidores = usuario.Seguidores,
-                FotoPerfil = usuario.FotoPerfil // Mapeando a FotoPerfil também
+                ImagemPerfil = usuario.ImagemPerfil
             };
 
-            // Passar o usuarioSemSenha para a View
+            ViewBag.CidadesVisitadas = usuario.CidadesVisitadas ?? new List<string>();
+
             return View(usuarioSemSenha);
         }
+
 
         public async Task<IActionResult> Seguidores(string id)
         {
             var usuarioLogado = _sessao.BuscarSessaoDoUsuario();
 
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
+            var usuarioPerfil = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
-            if (usuario?.Seguidores == null || usuario.Seguidores.Count == 0)
+            if (usuarioPerfil?.Seguidores == null || usuarioPerfil.Seguidores.Count == 0)
             {
                 return View(new List<UsuarioModel>());
             }
 
-            ViewBag.UsuarioId = usuario.Id.ToString();
+            ViewBag.UsuarioPerfil = usuarioPerfil;
             ViewBag.UsuarioLogadoId = usuarioLogado.Id;
 
-            var seguidores = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuario.Seguidores);
+            var seguidores = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioPerfil.Seguidores);
 
             return View(seguidores);
         }
@@ -100,59 +89,95 @@ namespace TravelShare.Controllers
         {
             var usuarioLogado = _sessao.BuscarSessaoDoUsuario();
 
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
+            var usuarioPerfil = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
-            if (usuario?.Seguindo == null || usuario.Seguindo.Count == 0)
+            if (usuarioPerfil?.Seguindo == null || usuarioPerfil.Seguindo.Count == 0)
             {
                 return View(new List<UsuarioModel>());
             }
 
-            ViewBag.UsuarioId = usuario.Id.ToString();
-            ViewBag.UsuarioLogadoId = usuarioLogado.Id;
+            ViewBag.UsuarioPerfil = usuarioPerfil;
+            ViewBag.UsuarioLogado = usuarioLogado;
 
-            var seguindo = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuario.Seguindo);
+            var seguindo = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioPerfil.Seguindo);
 
             return View(seguindo);
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditarPerfil(UsuarioSemSenhaModel usuario, IFormFile? foto)
+        public async Task<IActionResult> EditarPerfil(UsuarioSemSenhaModel usuario, IFormFile? imagem)
         {
             try
             {
                 var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuario.Id);
 
-                if (usuario == null)
+                if (usuarioDb == null)
                 {
-                    return RedirectToAction("Login", "Login");
+                    TempData["Message"] = "Usuário não encontrado.";
+                    return RedirectToAction("Index", "Home");
                 }
                 if (!ModelState.IsValid)
                 {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    TempData["ValidationErrors"] = errors;
-                    return View(usuario);
+                    var erros = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    foreach (var erro in erros)
+                    {
+                        Console.WriteLine(erro);
+                    }
+                    return View(usuario);  // Retorna para a mesma view com os erros
                 }
-
                 if (ModelState.IsValid)
                 {
-                    // Se uma foto foi enviada, atualize a FotoPerfil
-                    if (foto != null)
+                    var emailExistente = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(usuario.Email);
+                    var usernameExistente = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(usuario.Username);
+
+                    if (emailExistente != null && emailExistente.Id != usuario.Id)
                     {
-                        usuario.FotoPerfil = await _caminhoImagem.GerarCaminhoImagemAsync(foto);
+                        TempData["Message"] = "Já existe uma conta com esse email.";
+                        return View(usuario);
                     }
 
-                    await _usuarioRepository.AtualizarUsuarioAsync(usuario);
+                    if (usernameExistente != null && usernameExistente.Id != usuario.Id)
+                    {
+                        TempData["Message"] = "Já existe uma conta com esse username.";
+                        return View(usuario);
+                    }
 
-                    TempData["Message"] = "Os dados foram atualizados com sucesso.";
-                    return RedirectToAction("EditarPerfil"); // Redireciona para a página de edição do perfil, sem precisar passar o id
+                    // Se uma foto foi enviada, atualize a ImagemPerfil
+                    if (imagem != null)
+                    {
+                        var caminhoImagem = await _caminhoImagem.GerarCaminhoImagemAsync(imagem);
+                        if (!string.IsNullOrEmpty(caminhoImagem))
+                        {
+                            usuario.ImagemPerfil = caminhoImagem;
+                        }
+                    }
+                    else
+                    {
+                        usuario.ImagemPerfil = usuarioDb.ImagemPerfil;
+                    }
+
+                       var usuarioAtualizado = await _usuarioRepository.AtualizarUsuarioAsync(usuario);
+
+                    if (usuarioAtualizado)
+                    {
+                        TempData["Message"] = "Os dados foram atualizados com sucesso.";
+                    }
+                    else
+                    {
+                        TempData["Message"] = "Nenhum dado alterado.";
+                        return RedirectToAction("EditarPerfil", new { id = usuario.Id });
+
+                    }
+                    return RedirectToAction("Perfil", new { id = usuario.Id });
                 }
+               
 
                 TempData["Message"] = "Houve um erro nos dados inseridos.";
                 return View(usuario); // Retorna a view com o modelo que contém os erros
             }
             catch (Exception ex)
             {
-                TempData["Message"] = $"Erro ao atualizar perfil: {ex.Message}";
+                TempData["Message"] = $"{ex.Message}";
                 return View(usuario);
             }
         }
@@ -162,44 +187,14 @@ namespace TravelShare.Controllers
         {
             var usuario = _sessao.BuscarSessaoDoUsuario();
 
-            if (usuario == null)
-            {
-                TempData["Message"] = "Usuário não encontrado.";
-                return RedirectToAction("EditarPerfil");
-            }
-
-            // Adicionar deletação de post e comentários e todas as collections relacionadas
             await _usuarioRepository.DeletarUsuarioAsync(usuario.Id);
             TempData["Message"] = "Conta excluída com sucesso.";
 
             return RedirectToAction("Login", "Login");
         }
 
-        // METODOS ADICIONAR E REMOVER CIDADE
 
-        [HttpPost]
-        public async Task<IActionResult> AddCidadeVisitada(string usuarioId, List<string> cidadesVisitadas)
-        {
-            // Buscar o usuário pelo ID
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
+     
 
-            if (usuario == null)
-            {
-                TempData["Message"] = "Usuário não encontrado.";
-                return RedirectToAction("EditarPerfil");
-            }
-
-            // Mapear os dados do UsuarioModel para UsuarioSemSenhaModel
-            var usuarioSemSenha = new UsuarioSemSenhaModel
-            {
-                // Aqui você mapeia os campos necessários, como CidadesVisitadas
-                CidadesVisitadas = cidadesVisitadas
-            };
-
-            // Atualizar o usuário no repositório com o UsuarioSemSenhaModel
-            await _usuarioRepository.AtualizarUsuarioAsync(usuarioSemSenha);
-
-            return Ok(new { mensagem = "Cidades visitadas atualizadas com sucesso!" });
-        }
     }
 }

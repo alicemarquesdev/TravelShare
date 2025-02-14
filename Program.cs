@@ -19,6 +19,8 @@ namespace TravelShare
             builder.Services.AddSingleton<MongoContext>();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            builder.Services.AddHostedService<NotificacaoCleanupService>();
+
             builder.Services.AddScoped<ISessao, Sessao>();
             builder.Services.AddScoped<ICaminhoImagem, CaminhoImagem>();
             builder.Services.AddScoped<IComentarioRepository, ComentarioRepository>();
@@ -26,10 +28,15 @@ namespace TravelShare
             builder.Services.AddScoped<ISeguidorRepository, SeguidorRepository>();
             builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
             builder.Services.AddScoped<ICurtidaRepository, CurtidaRepository>();
+            builder.Services.AddScoped<ICidadesVisitadasRepository, CidadesVisitadasRepository>();
+            builder.Services.AddScoped<INotificacaoRepository, NotificacaoRepository>();
+            builder.Services.AddScoped<IEmail, Email>();
+            builder.Services.AddScoped<IAlterarSenhaRepository, AlterarSenhaRepositorio>();
+
 
             builder.Services.AddSession(o =>
             {
-                o.IOTimeout = TimeSpan.FromMinutes(30);
+                o.IdleTimeout = TimeSpan.FromMinutes(30);
                 o.Cookie.HttpOnly = true;
                 o.Cookie.IsEssential = true;
                 o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -50,13 +57,15 @@ namespace TravelShare
 
             app.UseRouting();
 
+            app.UseAuthentication(); 
+
             app.UseAuthorization();
 
             app.UseSession();
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Login}/{action=Login}/{id?}");
+                pattern: "{controller=Login}/{action=Index}/{id?}");
 
             app.Run();
         }

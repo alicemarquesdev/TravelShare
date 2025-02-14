@@ -7,11 +7,11 @@ namespace TravelShare.Repository
 {
     public class CurtidaRepository : ICurtidaRepository
     {
-        private readonly IMongoCollection<PostsModel> _postsCollection;
+        private readonly IMongoCollection<PostModel> _postsCollection;
 
         public CurtidaRepository(MongoContext mongoContext)
         {
-            _postsCollection = mongoContext.GetCollection<PostsModel>("Posts");
+            _postsCollection = mongoContext.GetCollection<PostModel>("Posts");
         }
 
         public async Task<bool> BuscarCurtidaExistenteAsync(string postId, string usuarioId)
@@ -22,8 +22,8 @@ namespace TravelShare.Repository
 
         public async Task<bool> AddCurtidaAsync(string postId, string usuarioId)
         {
-            var filter = Builders<PostsModel>.Filter.Eq(x => x.Id, postId);
-            var update = Builders<PostsModel>.Update.AddToSet(x => x.Curtidas, usuarioId);
+            var filter = Builders<PostModel>.Filter.Eq(x => x.Id, postId);
+            var update = Builders<PostModel>.Update.AddToSet(x => x.Curtidas, usuarioId);
 
             var resultado = await _postsCollection.UpdateOneAsync(filter, update);
 
@@ -32,8 +32,8 @@ namespace TravelShare.Repository
 
         public async Task<bool> RemoveCurtidaAsync(string postId, string usuarioId)
         {
-            var filter = Builders<PostsModel>.Filter.Eq(x => x.Id, postId);
-            var update = Builders<PostsModel>.Update.Pull(x => x.Curtidas, usuarioId);
+            var filter = Builders<PostModel>.Filter.Eq(x => x.Id, postId);
+            var update = Builders<PostModel>.Update.Pull(x => x.Curtidas, usuarioId);
 
             var resultado = await _postsCollection.UpdateOneAsync(filter, update);
 

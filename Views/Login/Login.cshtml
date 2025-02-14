@@ -11,12 +11,12 @@
                 <div class="card-body">
                     <form asp-controller="Login" asp-action="Entrar" method="post">
                         <div class="form-floating mb-3">
-                            <input class="form-control" asp-for="EmailOuUsername" id="EmailOuUsername" type="text" />
+                            <input class="form-control" asp-for="EmailOuUsername" type="text" />
                             <label for="EmailOuUsername">Email/Username</label>
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.EmailOuUsername)</span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control"  asp-for="Senha" id="Senha" type="password"/>
+                            <input class="form-control"  asp-for="Senha" type="password"/>
                             <label for="Senha">Senha</label>
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
                         </div>

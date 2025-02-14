@@ -7,12 +7,12 @@ namespace TravelShare.Repository
 {
     public class ComentarioRepository : IComentarioRepository
     {
-        private IMongoCollection<ComentarioModel> _comentarioCollection;
+        private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
 
         public ComentarioRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
         {
-            _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentario");
+            _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentarios");
             _usuarioRepository = usuarioRepository;
         }
 
@@ -20,17 +20,13 @@ namespace TravelShare.Repository
         {
             var comentario = await _comentarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(comentario.UsuarioId);
-
-            comentario.UsuarioId = usuario.Id;
-            comentario.UsuarioUsername = usuario.Username;
+            if (comentario == null) throw new NullReferenceException("A referência do comentário está nula.");
 
             return comentario;
         }
 
         public async Task<List<ComentarioModel>> BuscarTodosOsComentariosDoPostAsync(string postId)
         {
-            // Busca todos os comentários do post
             var comentarios = await _comentarioCollection.Find(x => x.PostId == postId).ToListAsync();
 
             // Se não houver comentários, retorna uma lista vazia
@@ -54,16 +50,15 @@ namespace TravelShare.Repository
                     comentario.UsuarioUsername = usuario.Username;
                 }
             }
-
             return comentarios;
         }
 
-        public async Task AddComentario(ComentarioModel comentario)
+        public async Task AddComentarioAsync(ComentarioModel comentario)
         {
             await _comentarioCollection.InsertOneAsync(comentario);
         }
 
-        public async Task<bool> DeletarComentario(string id)
+        public async Task<bool> DeletarComentarioAsync(string id)
         {
             var deletarComentario = await _comentarioCollection.DeleteOneAsync(x => x.Id == id);
             return deletarComentario.DeletedCount > 0;

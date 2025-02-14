@@ -7,12 +7,12 @@ namespace TravelShare.Repository
 {
     public class SeguidorRepository : ISeguidorRepository
     {
-        private IMongoCollection<UsuarioModel> _usuarioCollection;
-        private IUsuarioRepository _usuarioRepository;
+        private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
+        private readonly IUsuarioRepository _usuarioRepository;
 
         public SeguidorRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
         {
-            _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuario");
+            _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
             _usuarioRepository = usuarioRepository;
         }
 
@@ -22,8 +22,7 @@ namespace TravelShare.Repository
         {
             var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
 
-            if (usuario == null)
-                return new List<UsuarioModel>();
+            if (usuario == null) return new List<UsuarioModel>();
 
             List<UsuarioModel> seguidores = new List<UsuarioModel>();
 
@@ -46,7 +45,7 @@ namespace TravelShare.Repository
             var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
             var update = Builders<UsuarioModel>.Update.Pull(x => x.Seguidores, seguidorId);
 
-            var seguindo = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
+            var seguindo = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguidorId);
             var removerDosSeguindo = Builders<UsuarioModel>.Update.Pull(x => x.Seguindo, usuarioId);
 
             await _usuarioCollection.UpdateOneAsync(seguindo, removerDosSeguindo);
@@ -62,8 +61,7 @@ namespace TravelShare.Repository
         {
             var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
 
-            if (usuario == null)
-                return new List<UsuarioModel>();
+            if (usuario == null) return new List<UsuarioModel>();
 
             List<UsuarioModel> seguindo = new List<UsuarioModel>();
 

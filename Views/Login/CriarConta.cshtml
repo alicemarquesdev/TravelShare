@@ -4,7 +4,7 @@
     Layout = "_LayoutDeslogado";
 }
 
-<div class="container">
+<div class="container mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-7">
             <div class="card shadow-lg border-0 rounded-lg mt-5">
@@ -13,70 +13,64 @@
                 </div>
                 <div class="card-body">
                     <form asp-controller="Login" asp-action="CriarConta" method="post">
-                        <div class="text-danger">
-                            @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
-                        </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
-                                    <input class="form-control" asp-for="Nome" id="Nome" type="text" />
+                                    <input class="form-control" asp-for="Nome" type="text" required/>
                                     <label for="Nome">Nome</label>
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.Nome)</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input class="form-control" asp-for="Username" id="Username" type="text" />
+                                    <input class="form-control" asp-for="Username" type="text" style="text-transform: lowercase;" required/>
                                     <label for="Username">Username</label>
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" asp-for="Email" id="Email" type="email" />
+                            <input class="form-control" asp-for="Email" type="email" style="text-transform: lowercase;" required/>
                             <label for="Email">Email</label>
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.Email)</span>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
-                                    <input class="form-control" asp-for="DataNascimento" id="DataNascimento" type="date" />
+                                    <input class="form-control" asp-for="DataNascimento" type="date" min="1920-01-01" max="2010-01-01" />
                                     <label for="DataNascimento">Data de Nascimento</label>
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
-                                    <input class="form-control cities-autocomplete" asp-for="CidadeDeNascimento " id="CidadeDeNascimento " type="text" placeholder="Digite o país" />
-                                    <label for="CidadeDeNascimento ">Cidade de Origem</label>
-                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadeDeNascimento )</span>
+                                    <input class="form-control cities-autocomplete" id="cities-autocomplete" asp-for="CidadeDeNascimento" type="text" />
+                                    <label for="CidadeDeNascimento">Cidade de Origem</label>
+                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadeDeNascimento)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
-                                    <input class="form-control" asp-for="Senha" id="Senha" type="password" />
+                                    <input class="form-control" asp-for="Senha" type="password" id="Senha" name="Senha" required />
                                     <label for="Senha">Senha</label>
-                                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
+                                    <span id="senhaErro" class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
-                                    <input class="form-control" asp-for="SenhaConfirmacao" id="SenhaConfirmacao" type="password" />
+                                    <input class="form-control" asp-for="SenhaConfirmacao" type="password" />
                                     <label for="SenhaConfirmacao">Senha Confirmação</label>
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.SenhaConfirmacao)</span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="mt-4 mb-0">
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-dark w-100">Criar Conta</button>
                             </div>
                         </div>
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">

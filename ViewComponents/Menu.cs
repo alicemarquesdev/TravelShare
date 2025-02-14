@@ -15,12 +15,6 @@ namespace TravelShare.ViewComponents
         public async Task<IViewComponentResult> InvokeAsync()
         {
             var usuario = _sessao.BuscarSessaoDoUsuario();
-
-            if (usuario == null)
-            {
-                TempData["Message"] = "Usuário não encontrado";
-            }
-
             return View(usuario);
         }
     }

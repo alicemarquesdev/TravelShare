@@ -1,0 +1,13 @@
+﻿@{
+    Layout = "_LayoutDeslogado";
+}
+
+<div class="container-fluid vh-100 d-flex justify-content-center align-items-center" style="background-image: url('/image/bg-image.jpg'); background-size: cover; background-position: center;">
+    <div class="text-center text-white p-5" style="background-color: rgba(0, 0, 0, 0.5); border-radius: 10px;">
+        <h1 class="display-4 mb-4">Conecte-se, compartilhe e viva novas aventuras!</h1>
+        <div class="d-flex justify-content-center gap-3">
+            <a asp-controller="Login" asp-action="Login" class="btn btn-light w-25">Login</a>
+            <a asp-controller="Login" asp-action="CriarConta" class="btn btn-light w-25">Criar Conta</a>
+        </div>
+    </div>
+</div>

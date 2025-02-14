@@ -1,0 +1,53 @@
+﻿@model PostModel
+
+@{
+    var usuarioLogadoId = ViewBag.UsuarioLogadoId as string;
+}
+
+<div class="container-fluid mt-5 py-xxl-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header text-white text-center">
+                    <h3>Criar Novo Post</h3>
+                </div>
+                <div class="card-body pt-4">
+                    <form asp-controller="Post" asp-action="CriarPost" method="post" enctype="multipart/form-data">
+
+                        <input type="hidden" asp-for="UsuarioId" value="@usuarioLogadoId" />
+
+                        <!-- Pré-visualização das Imagens -->
+                        <div id="currentImagePreview" class="text-center my-3" style=" max-width: 100%; max-height: 250px; object-fit: cover; margin: 5px;">
+                            <!-- Imagens serão injetadas aqui -->
+                        </div>
+
+                        <!-- Input de Imagem -->
+                        <div class="form-group mb-3">
+                            <input type="file" class="form-control" asp-for="ImagemPost" id="ImagemPost" name="ImagemPost" multiple required>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.ImagemPost) </span>
+                            <small class="text-muted" id="fileWarning"></small>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control cities-autocomplete" id="cities-autocomplete" asp-for=" Localizacao">
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Localizacao) </span>
+                            <label for="Localizacao" class="ms-1">Localização</label>
+                        </div>
+
+                        <!-- Input de Legenda -->
+                        <div class="form-floating mb-3">
+                            <textarea type="text" class="form-control" asp-for="Legenda" rows="4"></textarea>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Legenda) </span>
+                            <label for="Legenda" class="ms-1">Legenda</label>
+                        </div>
+
+                        <!-- Botão para Salvar -->
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-dark w-25">Partilhar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

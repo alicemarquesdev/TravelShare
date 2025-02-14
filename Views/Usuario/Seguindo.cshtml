@@ -1,9 +1,10 @@
 ﻿@model List<UsuarioModel>
 
 @{
-    var usuarioId = ViewBag.UsuarioId as string;
-    var UsuarioLogadoId = ViewBag.UsuarioLogadoId as string;
+    var usuarioPerfil = ViewBag.UsuarioPerfil as UsuarioModel;
+    var UsuarioLogado = ViewBag.UsuarioLogado as UsuarioModel;
 }
+
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -22,24 +23,31 @@
                                         <div class="d-flex align-items-center">
                                             <!-- Foto de perfil -->
                                             <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@seguidor.Id">
-                                                <img src="@Url.Content(seguidor.FotoPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <img src="@Url.Content(seguidor.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
 
-                                                <div class="ml-3">
+                                                <div class="ms-3">
                                                     <h5 class="card-title m-0">@seguidor.Nome</h5>
-                                                    <small class="text-muted">@seguidor.Username</small>
+                                                    <small class="text-muted">@@@seguidor.Username</small>
                                                     <p class="m-0 text-muted">@seguidor.CidadeDeNascimento </p>
                                                 </div>
                                             </a>
                                             <!-- Botão de Seguir -->
-                                            <div class="ml-auto">
+                                            <div class="ms-auto">
                                                 <div>
-                                                    @if (usuarioId == UsuarioLogadoId)
-                                                    { 
-                                                    <form asp-controller="Seguidor" asp-action="SeguirEDeseguir" method="post">
-                                                        <input type="hidden" name="seguindoId" value="@seguidor.Id.ToString()" />
-                                                        <input type="hidden" name="usuarioId" value="@usuarioId" />
-                                                        <button type="submit" class="btn btn-outline-secondary"> Deixar de Seguir </button>
-                                                    </form>
+                                                    @if (usuarioPerfil.Id == UsuarioLogado.Id)
+                                                    {
+                                                        <form class="seguirOuDeseguirForm" data-seguindo-id="@seguidor.Id.ToString()" data-usuario-id="@UsuarioLogado.Id" method="post">
+
+                                                            @if (UsuarioLogado.Seguindo != null && UsuarioLogado.Seguindo.Contains(seguidor.Id))
+                                                            {
+                                                                <button type="submit" class="btn btn-outline-dark"> Seguindo </button>
+
+                                                            }
+                                                            else
+                                                            {
+                                                                <button type="submit" class="btn btn-dark"> Seguir </button>
+                                                            }
+                                                        </form>
                                                     }
                                                 </div>
                                             </div>

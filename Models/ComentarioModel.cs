@@ -8,10 +8,11 @@ namespace TravelShare.Models
     {
         [BsonId]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [BsonElement("Comentario")]
-        [Required]
+        [Required(ErrorMessage = "Comentário vazio.")]
+        [StringLength(100, ErrorMessage = "O comentário deve ter no máximo 100 caracteres.")]
         public string Comentario { get; set; }
 
         [BsonElement("DataCriacao")]
@@ -19,14 +20,12 @@ namespace TravelShare.Models
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         [BsonElement("PostId")]
-        [BsonRepresentation(BsonType.ObjectId)]
         public string PostId { get; set; }
 
         [BsonElement("UsuarioId")]
-        [BsonRepresentation(BsonType.ObjectId)]
         public string UsuarioId { get; set; }
 
         [BsonElement("UsuarioUsername")]
-        public string? UsuarioUsername { get; set; }
+        public string UsuarioUsername { get; set; }
     }
 }
