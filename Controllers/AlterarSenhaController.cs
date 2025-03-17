@@ -1,74 +1,106 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TravelShare.Filters;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Controllers
 {
+    // Controller responsável por Alterar Senha do usuário.
+    // GET - AlterarSenha(string id) - Exibe a view
+    // POST - AlterarSenha(AlterarSenhaModel alterarSenha)
+    [PaginaParaUsuarioLogado] // - Acesso apenas para usuários logados
     public class AlterarSenhaController : Controller
     {
         private readonly IUsuarioRepository _usuarioRepository;
-        private readonly IAlterarSenhaRepository _alterarSenhaRepository;
+        private readonly IAlteracaoSenhaRepository _alterarSenhaRepository;
+        private readonly ILogger<AlterarSenhaController> _logger;
 
-        public AlterarSenhaController(IUsuarioRepository usuarioRepository, IAlterarSenhaRepository alterarSenhaRepository)
+        // Adicionando throws para garantir que as dependências sejam não nulas
+        public AlterarSenhaController(
+            IUsuarioRepository usuarioRepository,
+            IAlteracaoSenhaRepository alterarSenhaRepository,
+            ILogger<AlterarSenhaController> logger)
         {
-            _usuarioRepository = usuarioRepository;
-            _alterarSenhaRepository = alterarSenhaRepository;
+            _usuarioRepository = usuarioRepository ?? throw new ArgumentNullException(nameof(usuarioRepository), "Usuário Repository não pode ser nulo.");
+            _alterarSenhaRepository = alterarSenhaRepository ?? throw new ArgumentNullException(nameof(alterarSenhaRepository), "Alteração de Senha Repository não pode ser nulo.");
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger não pode ser nulo.");
         }
 
+        // Método GET para alterar senha
         public async Task<IActionResult> AlterarSenha(string id)
         {
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
-
-            if (usuario == null)
+            if (string.IsNullOrEmpty(id))
             {
-                TempData["Message"] = "Usuário não encontrado.";
-                return RedirectToAction("Perfil", "Usuario");
+                throw new ArgumentNullException("id é nulo");
             }
 
-            ViewBag.UsuarioId = id;
+            try
+            {
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
 
-            return View();
+                if (usuario == null)
+                {
+                    throw new ArgumentNullException("Usuário não encontrado no banco de dados.");
+
+                }
+
+                var alterarSenhaModel = new AlterarSenhaModel
+                {
+                    Id = usuario.Id,
+                    SenhaAtual = string.Empty,
+                    NovaSenha = string.Empty,
+                    NovaSenhaConfirmacao = string.Empty,
+                };
+
+                return View(alterarSenhaModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao tentar carregar AlterarSenha.");
+                TempData["Message"] = "Desculpe, erro ao tentar carregar a página.";
+                return RedirectToAction("Perfil", "Usuario");
+            }
         }
 
-
-
+        // Método POST para alterar senha
         [HttpPost]
         public async Task<IActionResult> AlterarSenha(AlterarSenhaModel alterarSenha)
         {
-            var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(alterarSenha.Id);
-
-            if (usuarioDb == null)
-            {
-                TempData["Message"] = "Usuário não encontrado";
-                return RedirectToAction("Login", "Login");
-            }
             try
             {
                 if (ModelState.IsValid)
                 {
+                    var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(alterarSenha.Id);
+
+                    if (usuarioDb == null)
+                    {
+                        throw new ArgumentNullException("Usuário não encontrado no banco de dados.");
+                    }
+
+
                     var senhaAlterada = await _alterarSenhaRepository.AlterarSenhaAsync(alterarSenha);
 
-                    if (senhaAlterada)
+                    if (!senhaAlterada)
                     {
-                        TempData["Message"] = "Senha alterada com sucesso!";
+                        throw new ArgumentNullException("Erro ao alterar senha no repositorio.");
                     }
-                    else
-                    {
-                        TempData["Message"] = "Não foi possível alterar a senha.";
-                    }
+
+                    _logger.LogInformation($"Senha alterada com sucesso para o usuário {alterarSenha.Id}.");
+                    TempData["Message"] = "Senha alterada com sucesso!";
 
                     return RedirectToAction("AlterarSenha", "AlterarSenha");
                 }
 
+                _logger.LogWarning("Modelo de dados inválido para alteração de senha.");
                 TempData["Message"] = "Houve um erro, verifique os dados inseridos.";
                 return RedirectToAction("AlterarSenha", "AlterarSenha");
             }
             catch (Exception ex)
             {
-                TempData["Message"] = ex.Message;
+                _logger.LogError(ex, "Erro ao tentar alterar a senha.");
+                TempData["Message"] = "Ocorreu um erro ao tentar alterar a senha. Tente novamente.";
                 return RedirectToAction("AlterarSenha", "AlterarSenha");
             }
-
         }
     }
 }

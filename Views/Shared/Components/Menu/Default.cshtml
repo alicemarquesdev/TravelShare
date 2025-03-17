@@ -2,59 +2,70 @@
 
 <nav class="navbar navbar-expand-lg bg-white fixed-left" id="sideNav" style="border-right: 3px solid black; height: 100vh; width: 250px; padding-top: 20px; display: flex; flex-direction: column;">
 
-    <!-- Título TravelShare fixado no topo -->
+    <!-- Título "TravelShare", que está fixado no topo da barra lateral -->
     <h3 class="text-dark text-center mb-4">TravelShare</h3>
 
+    <!-- Botão que ativa o menu de navegação (em dispositivos pequenos) -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- Lista centralizada verticalmente -->
+    <!-- Lista de navegação centralizada verticalmente, com flexbox -->
     <div class="collapse navbar-collapse" id="navbarResponsive" style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
         <ul class="navbar-nav flex-column align-items-start ms-4">
+            <!-- Link para a página inicial -->
             <li class="nav-item mb-4">
                 <a class="nav-link d-flex align-items-center js-scroll-trigger" asp-controller="Home" asp-action="Index">
                     <i class="bi bi-house-door-fill fs-4 me-2"></i>
                     Página Inicial
                 </a>
             </li>
+            <!-- Link para explorar outras páginas (exibe página de explorar) -->
             <li class="nav-item mb-4">
                 <a class="nav-link d-flex align-items-center js-scroll-trigger" asp-controller="Home" asp-action="Explorar" asp-route-id="@Model.Id">
                     <i class="bi bi-compass fs-4 me-2"></i>
                     Explorar
                 </a>
             </li>
+            <!-- Link para a página de notificações -->
             <li class="nav-item mb-4">
                 <a class="nav-link d-flex align-items-center js-scroll-trigger" asp-controller="Home" asp-action="Notificacoes" asp-route-id="@Model.Id">
                     <i class="bi bi-heart fs-4 me-2"></i>
                     Notificações
                 </a>
             </li>
+            <!-- Link para a página de criação de posts -->
             <li class="nav-item mb-4">
                 <a class="nav-link d-flex align-items-center js-scroll-trigger" asp-controller="Post" asp-action="CriarPost" asp-route-id="@Model.Id">
                     <i class="bi bi-plus-square fs-4 me-2"></i>
                     Criar
                 </a>
             </li>
+            <!-- Link para a página de perfil do usuário -->
             <li class="nav-item mb-4">
                 <a class="nav-link d-flex align-items-center js-scroll-trigger" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@Model.Id">
+                    <!-- Foto de perfil do usuário -->
                     <img src="@Url.Content(Model.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                    @Model.Nome
+                    @Model.Nome <!-- Nome do usuário -->
                 </a>
             </li>
         </ul>
-
     </div>
-  
+
+    <!-- Div que contém o botão para abrir o dropdown de opções extras -->
     <div class="d-flex align-items-center justify-items-center w-100 mb-4 ms-5">
-        <!-- Dropdown para abrir para cima e à direita -->
+        <!-- Dropdown que aparece acima e à direita do botão -->
         <div class="dropup-center dropup">
+            <!-- Botão que abre o menu dropdown -->
             <a class="text-decoration-none fw-bold text-secondary d-flex align-items-center" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-list fs-3 me-2"></i>  MAIS
+                <i class="bi bi-list fs-3 me-2"></i> MAIS
             </a>
 
+            <!-- Menu de dropdown que contém opções adicionais -->
             <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="bottom: 100%; top: auto;">
+                <!-- Opção para editar o perfil do usuário -->
                 <li><a class="dropdown-item fw-bold text-secondary" asp-controller="Usuario" asp-action="EditarPerfil" asp-route-id="@Model.Id">Editar Perfil</a></li>
+                <!-- Opção para o usuário sair -->
                 <li><a class="dropdown-item fw-bold text-secondary" asp-controller="Home" asp-action="Sair">Sair</a></li>
             </ul>
         </div>

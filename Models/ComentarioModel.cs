@@ -4,28 +4,35 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TravelShare.Models
 {
+    // Model usada para armazenar os dados do comentário
     public class ComentarioModel
     {
+        // Identificador único do comentário no MongoDB
         [BsonId]
-        [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+        [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
 
+        // Conteúdo do comentário (campo obrigatório, máximo 100 caracteres)
         [BsonElement("Comentario")]
         [Required(ErrorMessage = "Comentário vazio.")]
         [StringLength(100, ErrorMessage = "O comentário deve ter no máximo 100 caracteres.")]
-        public string Comentario { get; set; }
+        public required string Comentario { get; set; }
 
+        // Data de criação do comentário, armazenada em UTC
         [BsonElement("DataCriacao")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
+        // ID do post ao qual o comentário pertence
         [BsonElement("PostId")]
-        public string PostId { get; set; }
+        public required string PostId { get; set; }
 
+        // ID do usuário que fez o comentário
         [BsonElement("UsuarioId")]
-        public string UsuarioId { get; set; }
+        public required string UsuarioId { get; set; }
 
+        // Nome de usuário do autor do comentário
         [BsonElement("UsuarioUsername")]
-        public string UsuarioUsername { get; set; }
+        public required string UsuarioUsername { get; set; }
     }
 }

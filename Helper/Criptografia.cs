@@ -3,27 +3,35 @@ using System.Text;
 
 namespace TravelShare.Helper
 {
+    // Classe de criptografia que contém o método para gerar hashes, criptografando senhas antes de armazená-las no banco de dados
     public static class Criptografia
     {
+        // Método de extensão para a classe string, que gera um hash usando o algoritmo SHA1
+        // O 'this' é usado aqui para criar um método de extensão para a classe 'string'. Ex: senha.GerarHash()
         public static string GerarHash(this string valor)
         {
-            var hash = SHA1.Create();  // Converte uma entrada de dados (neste caso, uma string) em um valor de tamanho fixo de 160 bits.
-            var encoding = new ASCIIEncoding(); // Será usada para converter a string para uma sequência de bytes, pois o algoritmo SHA1 trabalha com bytes, não com strings diretamente.
-            var array = encoding.GetBytes(valor); // Converte a string valor em um array de bytes usando a codificação ASCII.
-
-            array = hash.ComputeHash(array); // Calcula o hash SHA1 para o array de bytes gerado anteriormente. Isso produz um novo array de bytes que representa o hash da string.
-
-            var strHexa = new StringBuilder(); // Cria um StringBuilder para construir a representação final do hash em formato hexadecimal (uma string com números e letras de "0" a "f").
-
-            foreach (var item in array)
+            // Criação de uma instância do algoritmo SHA1
+            using (var hash = SHA1.Create())
             {
-                strHexa.Append(item.ToString("x2"));
+                // Codifica a string de entrada (valor) em um array de bytes
+                var encoding = new ASCIIEncoding();
+                var bytes = encoding.GetBytes(valor);
+
+                // Computa o hash (resultado criptografado) a partir do array de bytes
+                var hashBytes = hash.ComputeHash(bytes);
+
+                // Criação de um StringBuilder para construir a string hexadecimal
+                var strHexa = new StringBuilder();
+
+                // Converte cada byte do hash para uma representação hexadecimal
+                foreach (var byteValue in hashBytes)
+                {
+                    strHexa.Append(byteValue.ToString("x2"));
+                }
+
+                // Retorna o hash gerado como uma string no formato hexadecimal
+                return strHexa.ToString();
             }
-
-            // Para cada byte no array de hash resultante,  converte cada byte em uma representação hexadecimal de dois dígitos (o "x2" formata o byte para hexadecimal com dois dígitos, por exemplo, 10 vira 0a).
-            // Adiciona essa representação hexadecimal ao StringBuilder.
-
-            return strHexa.ToString(); //  Converte o StringBuilder para uma string e retorna o hash da string original, agora em formato hexadecimal.
         }
     }
 }

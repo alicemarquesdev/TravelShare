@@ -1,10 +1,17 @@
 ﻿using MongoDB.Driver;
+using System.Net.NetworkInformation;
 using TravelShare.Data;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Repository
 {
+    // Classe responsável pela manipulação dos comentários de um post de um usuário.
+    // Métodos disponíveis:
+    // - BuscarComentarioPorIdAsync(string id): Busca um comentário específico pelo seu ID.
+    // - BuscarTodosOsComentariosDoPostAsync(string postId): Busca todos os comentários de um post.
+    // - AddComentarioAsync(ComentarioModel comentario): Adiciona um novo comentário ao banco de dados.
+    // - DeletarComentarioAsync(string id): Deleta um comentário pelo seu ID.
     public class ComentarioRepository : IComentarioRepository
     {
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
@@ -16,52 +23,115 @@ namespace TravelShare.Repository
             _usuarioRepository = usuarioRepository;
         }
 
-        public async Task<ComentarioModel> BuscarComentarioPorIdAsync(string id)
+        // Busca um comentário pelo seu ID.
+        public async Task<ComentarioModel?> BuscarComentarioPorIdAsync(string id)
         {
-            var comentario = await _comentarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+            try
+            {
+                var comentario = await _comentarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-            if (comentario == null) throw new NullReferenceException("A referência do comentário está nula.");
+                // Se o comentário não for encontrado, lança uma exceção informando que o comentário está nulo.
+                if (comentario == null)
+                {
+                    throw new NullReferenceException("A referência do comentário está nula.");
+                }
 
-            return comentario;
+                return comentario;
+            }
+            catch (Exception ex)
+            {
+                // Trata qualquer erro que possa ocorrer durante a busca e lança a exceção.
+                throw new Exception($"Erro ao buscar comentário com ID {id}: {ex.Message}", ex);
+            }
         }
 
+        // Busca todos os comentários de um post específico.
         public async Task<List<ComentarioModel>> BuscarTodosOsComentariosDoPostAsync(string postId)
         {
-            var comentarios = await _comentarioCollection.Find(x => x.PostId == postId).ToListAsync();
-
-            // Se não houver comentários, retorna uma lista vazia
-            if (!comentarios.Any()) return new List<ComentarioModel>();
-
-            // Extrai os IDs dos usuários que fizeram os comentários
-            var usuarioIds = comentarios.Select(c => c.UsuarioId).Distinct().ToList();
-
-            // Busca todos os usuários de uma vez
-            var usuarios = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioIds);
-
-            // Cria um dicionário de usuários para associar aos comentários
-            var usuarioDictionary = usuarios.ToDictionary(u => u.Id, u => u);
-
-            // Associa os usuários aos comentários
-            foreach (var comentario in comentarios)
+            try
             {
-                if (usuarioDictionary.ContainsKey(comentario.UsuarioId))
+                var comentarios = await _comentarioCollection.Find(x => x.PostId == postId).ToListAsync();
+                
+                if(comentarios == null)
                 {
-                    var usuario = usuarioDictionary[comentario.UsuarioId];
-                    comentario.UsuarioUsername = usuario.Username;
+                    throw new NullReferenceException("Comentarios não encontrados no banco de dados, retornou null.");
                 }
+
+                // Se não houver comentários, retorna uma lista vazia.
+                if (!comentarios.Any()) return new List<ComentarioModel>();
+
+                // Extrai os IDs dos usuários que fizeram os comentários.
+                var usuarioIds = comentarios.Select(c => c.UsuarioId).Distinct().ToList();
+
+                // Busca todos os usuários de uma vez usando o repositório de usuários.
+                var usuarios = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioIds);
+
+                // Cria um dicionário de usuários para associar aos comentários.
+                var usuarioDictionary = usuarios.ToDictionary(u => u.Id, u => u);
+
+                // Associa os usuários aos comentários.
+                foreach (var comentario in comentarios)
+                {
+                    if (usuarioDictionary.ContainsKey(comentario.UsuarioId))
+                    {
+                        var usuario = usuarioDictionary[comentario.UsuarioId];
+                        comentario.UsuarioUsername = usuario.Username;
+                    }
+                }
+
+                return comentarios;
             }
-            return comentarios;
+            catch (Exception ex)
+            {
+                // Trata qualquer erro que possa ocorrer durante a busca e lança a exceção.
+                throw new Exception($"Erro ao buscar comentários do post com ID {postId}: {ex.Message}", ex);
+            }
         }
 
+        // Adiciona um novo comentário ao banco de dados.
         public async Task AddComentarioAsync(ComentarioModel comentario)
         {
-            await _comentarioCollection.InsertOneAsync(comentario);
+            try
+            {
+                if (comentario == null)
+                {
+                    throw new ArgumentNullException(nameof(comentario), "Comentário não pode ser nulo.");
+                }
+
+                // Insere o comentário na coleção de comentários.
+                await _comentarioCollection.InsertOneAsync(comentario);
+            }
+            catch (Exception ex)
+            {
+                // Trata qualquer erro que possa ocorrer durante a inserção e lança a exceção.
+                throw new Exception($"Erro ao adicionar comentário: {ex.Message}", ex);
+            }
         }
 
+        // Deleta um comentário pelo seu ID.
         public async Task<bool> DeletarComentarioAsync(string id)
         {
-            var deletarComentario = await _comentarioCollection.DeleteOneAsync(x => x.Id == id);
-            return deletarComentario.DeletedCount > 0;
+            try
+            {
+                var comentario = await _comentarioCollection.FindAsync(x => x.Id == id);
+
+                // Se não houver comentário, retorna exceção.
+                if (comentario == null)
+                {
+                    throw new Exception("Comentário não encontrado no banco de dados");
+                }
+
+                // Deleta o comentário com base no ID.
+                var deletarComentario = await _comentarioCollection.DeleteOneAsync(x => x.Id == id);
+
+                // Retorna verdadeiro se o comentário foi deletado, caso contrário, retorna falso.
+                return deletarComentario.DeletedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                // Trata qualquer erro que possa ocorrer durante a exclusão e lança a exceção.
+                throw new Exception($"Erro ao deletar comentário com ID {id}: {ex.Message}", ex);
+            }
         }
     }
 }

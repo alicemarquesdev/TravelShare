@@ -5,102 +5,225 @@ using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Repository
 {
+    // Classe responsável pela manipulação dos seguidores e seguindo de um usuário.
+    // Métodos disponíveis:
+    // - BuscarTodosSeguidoresAsync(string usuarioId): Retorna todos os seguidores de um usuário.
+    // - BuscarSeguidorAsync(string usuarioId, string seguidorId): Verifica se um usuário específico é seguidor de outro.
+    // - RemoverSeguidorAsync(string usuarioId, string seguidorId): Remove um seguidor da lista de seguidores do usuário.
+    // - BuscarTodosSeguindoAsync(string usuarioId): Retorna todas as pessoas que um usuário está seguindo.
+    // - BuscarSeguindoAsync(string usuarioId, string seguindoId): Verifica se um usuário específico está sendo seguido por outro.
+    // - DeseguirUsuarioAsync(string usuarioId, string seguindoId): Remove alguém da lista de pessoas que um usuário está seguindo.
+    // - SeguirUsuarioAsync(string usuarioId, string seguindoId): Adiciona um seguidor à lista de pessoas que um usuário está seguindo.
     public class SeguidorRepository : ISeguidorRepository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
 
+        // Construtor que recebe o contexto do MongoDB e o repositório de usuários
         public SeguidorRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
             _usuarioRepository = usuarioRepository;
         }
 
-        // CRUD Seguidor
-
+        // Método para buscar todos os seguidores de um usuário
         public async Task<List<UsuarioModel>> BuscarTodosSeguidoresAsync(string usuarioId)
         {
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
-
-            if (usuario == null) return new List<UsuarioModel>();
-
-            List<UsuarioModel> seguidores = new List<UsuarioModel>();
-
-            foreach (var seguidor in usuario.Seguidores)
+            try
             {
-                var usuarioSeguidor = await _usuarioRepository.BuscarUsuarioPorIdAsync(seguidor);
-                seguidores.Add(usuarioSeguidor);
+                // Busca o usuário no banco de dados
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
+
+                // Validação para verificar se o usuário existe
+                if (usuario == null) return new List<UsuarioModel>();
+
+                List<UsuarioModel> seguidores = new List<UsuarioModel>();
+
+                // Itera sobre os seguidores e busca o modelo completo de cada um
+                foreach (var seguidor in usuario.Seguidores)
+                {
+                    var usuarioSeguidor = await _usuarioRepository.BuscarUsuarioPorIdAsync(seguidor);
+                    seguidores.Add(usuarioSeguidor);
+                }
+
+                // Retorna a lista de seguidores encontrados
+                return seguidores;
             }
-
-            return seguidores;
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar seguidores" + ex.Message);
+            }
         }
 
-        public async Task<UsuarioModel> BuscarSeguidorAsync(string usuarioId, string seguidorId)
+        // Método para buscar um seguidor específico
+        public async Task<UsuarioModel?> BuscarSeguidorAsync(string usuarioId, string seguidorId)
         {
-            return await _usuarioCollection.Find(x => x.Id == usuarioId && x.Seguidores.Contains(seguidorId)).FirstOrDefaultAsync();
+            try
+            {
+                // Busca no banco de dados se o seguidor está na lista de seguidores do usuário
+                return await _usuarioCollection.Find(x => x.Id == usuarioId && x.Seguidores.Contains(seguidorId)).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+            }
         }
 
+        // Método para remover um seguidor da lista de seguidores de um usuário
         public async Task<bool> RemoverSeguidorAsync(string usuarioId, string seguidorId)
         {
-            var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
-            var update = Builders<UsuarioModel>.Update.Pull(x => x.Seguidores, seguidorId);
+            try
+            {
+                var relacaoUsuarioSeguidor = BuscarSeguidorAsync(usuarioId, seguidorId);
 
-            var seguindo = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguidorId);
-            var removerDosSeguindo = Builders<UsuarioModel>.Update.Pull(x => x.Seguindo, usuarioId);
+                if (relacaoUsuarioSeguidor == null)
+                {
+                    throw new Exception("Relação entre usuário e o seguidor não encontrada no banco de dados");
+                }
 
-            await _usuarioCollection.UpdateOneAsync(seguindo, removerDosSeguindo);
+                // Filtro para encontrar o usuário
+                var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
+                var update = Builders<UsuarioModel>.Update.Pull(x => x.Seguidores, seguidorId);
 
-            var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
+                // Filtro para o seguidor que será removido
+                var seguindoFilter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguidorId);
+                var removerDosSeguindo = Builders<UsuarioModel>.Update.Pull(x => x.Seguindo, usuarioId);
 
-            return resultado.ModifiedCount > 0;
+                // Executa as atualizações no banco de dados para remover o seguidor
+                var resultadoUsuario = await _usuarioCollection.UpdateOneAsync(filter, update);
+                var resultadoSeguidor = await _usuarioCollection.UpdateOneAsync(seguindoFilter, removerDosSeguindo);
+
+                // Retorna verdadeiro se as remoções foram bem-sucedidas
+                return resultadoUsuario.ModifiedCount > 0 && resultadoSeguidor.ModifiedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao remover seguidor" + ex.Message);
+            }
         }
 
-        // CRUD Seguindo
-
+        // Método para buscar todos os usuários que um usuário está seguindo
         public async Task<List<UsuarioModel>> BuscarTodosSeguindoAsync(string usuarioId)
         {
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
-
-            if (usuario == null) return new List<UsuarioModel>();
-
-            List<UsuarioModel> seguindo = new List<UsuarioModel>();
-
-            foreach (var seguidor in usuario.Seguindo)
+            try
             {
-                var usuarioSeguindo = await _usuarioRepository.BuscarUsuarioPorIdAsync(seguidor);
-                seguindo.Add(usuarioSeguindo);
+                // Busca o usuário no banco de dados
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
+
+                // Validação para verificar se o usuário existe
+                if (usuario == null) return new List<UsuarioModel>();
+
+                List<UsuarioModel> seguindo = new List<UsuarioModel>();
+
+                // Itera sobre os usuários seguidos e busca o modelo completo de cada um
+                foreach (var seguidor in usuario.Seguindo)
+                {
+                    var usuarioSeguindo = await _usuarioRepository.BuscarUsuarioPorIdAsync(seguidor);
+                    seguindo.Add(usuarioSeguindo);
+                }
+
+                // Retorna a lista de usuários seguidos
+                return seguindo;
             }
-
-            return seguindo;
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+            }
         }
 
-        public async Task<UsuarioModel> BuscarSeguindoAsync(string usuarioId, string seguindoId)
+        // Método para verificar se um usuário está seguindo outro
+        public async Task<UsuarioModel?> BuscarSeguindoAsync(string usuarioId, string seguindoId)
         {
-            return await _usuarioCollection.Find(x => x.Id == usuarioId && x.Seguindo.Contains(seguindoId)).FirstOrDefaultAsync();
+            try
+            {
+                // Verifica se o usuário está seguindo o usuário alvo
+                return await _usuarioCollection.Find(x => x.Id == usuarioId && x.Seguindo.Contains(seguindoId)).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // Caso haja erro, captura a exceção e retorna null
+                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+            }
         }
 
+        // Método para remover alguém da lista de pessoas que o usuário está seguindo
         public async Task DeseguirUsuarioAsync(string usuarioId, string seguindoId)
         {
-            var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
-            var update = Builders<UsuarioModel>.Update.Pull(x => x.Seguindo, seguindoId);
+            try
+            {
+                var relacaoUsuarioSeguidor = BuscarSeguindoAsync(usuarioId, seguindoId);
 
-            var usuarioSeguido = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguindoId);
-            var updateSeguido = Builders<UsuarioModel>.Update.Pull(x => x.Seguidores, usuarioId);
+                if (relacaoUsuarioSeguidor == null)
+                {
+                    throw new Exception("Relação entre usuário e o usuário seguindo não encontrada no banco de dados");
+                }
 
-            var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
-            var removerUsuarioDosSeguidores = await _usuarioCollection.UpdateOneAsync(usuarioSeguido, updateSeguido);
+                // Filtro para o usuário que deseja deseguir
+                var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
+                var update = Builders<UsuarioModel>.Update.Pull(x => x.Seguindo, seguindoId);
+
+                // Filtro para remover o usuário da lista de seguidores do usuário seguido
+                var usuarioSeguidoFilter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguindoId);
+                var updateSeguido = Builders<UsuarioModel>.Update.Pull(x => x.Seguidores, usuarioId);
+
+                // Executa as atualizações no banco de dados para deseguir
+                var resultadoUsuario = await _usuarioCollection.UpdateOneAsync(filter, update);
+                var resultadoSeguidor = await _usuarioCollection.UpdateOneAsync(usuarioSeguidoFilter, updateSeguido);
+
+                // Verifica se ambas as remoções foram bem-sucedidas
+                if (resultadoUsuario.ModifiedCount == 0 || resultadoSeguidor.ModifiedCount == 0)
+                {
+                    throw new Exception("Falha ao deseguir usuário.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao deseguir usuario" + ex.Message);
+
+            }
         }
 
+        // Método para adicionar um seguidor à lista de pessoas que o usuário está seguindo
         public async Task SeguirUsuarioAsync(string usuarioId, string seguindoId)
         {
-            var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
-            var update = Builders<UsuarioModel>.Update.AddToSet(x => x.Seguindo, seguindoId);
+            try
+            {
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
 
-            var usuarioSeguido = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguindoId);
-            var updateSeguido = Builders<UsuarioModel>.Update.AddToSet(x => x.Seguidores, usuarioId);
+                if (usuario == null)
+                {
+                    throw new Exception("Nenhum usuario encontrado no banco de dados");
+                }
 
-            var seguir = await _usuarioCollection.UpdateOneAsync(filter, update);
-            var addUsuarioNosSeguidores = await _usuarioCollection.UpdateOneAsync(usuarioSeguido, updateSeguido);
+                var seguindo = await _usuarioRepository.BuscarUsuarioPorIdAsync(seguindoId);
+
+                if (seguindo == null)
+                {
+                    throw new Exception("Usuario para seguir não encontrado no banco de dados.");
+                }
+
+                // Filtro para o usuário que deseja seguir outra pessoa
+                var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, usuarioId);
+                var update = Builders<UsuarioModel>.Update.AddToSet(x => x.Seguindo, seguindoId);
+
+                // Filtro para adicionar o usuário à lista de seguidores do usuário seguido
+                var usuarioSeguidoFilter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, seguindoId);
+                var updateSeguido = Builders<UsuarioModel>.Update.AddToSet(x => x.Seguidores, usuarioId);
+
+                // Executa as atualizações no banco de dados para seguir o usuário
+                var resultadoUsuario = await _usuarioCollection.UpdateOneAsync(filter, update);
+                var resultadoSeguidor = await _usuarioCollection.UpdateOneAsync(usuarioSeguidoFilter, updateSeguido);
+
+                // Verifica se ambas as adições foram bem-sucedidas
+                if (resultadoUsuario.ModifiedCount == 0 || resultadoSeguidor.ModifiedCount == 0)
+                {
+                    throw new Exception("Nada alterado no banco de dados.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao seguir usuario" + ex.Message);
+            }
         }
     }
 }

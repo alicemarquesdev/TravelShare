@@ -6,45 +6,96 @@ using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Repository
 {
-    public class AlterarSenhaRepositorio : IAlterarSenhaRepository
+    // Classe responsável pela alteração e redefinição da senha do usuário.
+    // Métodos disponíveis:
+    // - AlterarSenhaAsync(AlterarSenhaModel alterarSenha): Altera a senha atual do usuário, verificando a senha atual e a nova senha.
+    // - RedefinirSenha(string id, string novaSenha): Redefine a senha de um usuário utilizando o seu ID e a nova senha fornecida.
+    public class AlterarSenhaRepositorio : IAlteracaoSenhaRepository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
 
+        // Construtor que recebe o contexto do MongoDB e inicializa a coleção de usuários
         public AlterarSenhaRepositorio(MongoContext mongoContext)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
-
         }
+
+        // Método para alterar a senha de um usuário
         public async Task<bool> AlterarSenhaAsync(AlterarSenhaModel alterarSenha)
         {
-            var usuarioDb = await _usuarioCollection.Find(x => x.Id == alterarSenha.Id).FirstOrDefaultAsync();
-
-            if (usuarioDb == null) return false;
-
-            if (!usuarioDb.SenhaValida(alterarSenha.SenhaAtual))
+            try
             {
-                throw new Exception("A senha atual informada não está correta.");
+                // Busca o usuário no banco de dados com o ID fornecido
+                var usuarioDb = await _usuarioCollection.Find(x => x.Id == alterarSenha.Id).FirstOrDefaultAsync();
+
+                // Se o usuário não for encontrado, retorna false
+                if (usuarioDb == null) return false;
+
+                // Verifica se a senha atual informada está correta
+                if (!usuarioDb.SenhaValida(alterarSenha.SenhaAtual))
+                {
+                    throw new Exception("A senha atual informada não está correta.");
+                }
+
+                // Se a nova senha for igual à senha atual, lança uma exceção
+                if (usuarioDb.SenhaValida(alterarSenha.NovaSenha))
+                {
+                    throw new Exception("A nova senha não pode ser igual à senha atual.");
+                }
+
+                // Define a nova senha para o usuário
+                usuarioDb.SetNovaSenha(alterarSenha.NovaSenha);
+
+                // Cria o filtro para encontrar o usuário no banco de dados pelo ID
+                var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, alterarSenha.Id);
+
+                // Cria o comando de atualização para definir a nova senha (já gerada com hash)
+                var update = Builders<UsuarioModel>.Update.Set(x => x.Senha, alterarSenha.NovaSenha.GerarHash());
+
+                // Executa a atualização no banco de dados
+                var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
+
+                // Retorna true se a senha foi atualizada com sucesso (modified count maior que 0)
+                return resultado.ModifiedCount > 0;
             }
-
-            // Se a nova senha é igual a senha atual
-            if (usuarioDb.SenhaValida(alterarSenha.NovaSenha))
-            { 
-                throw new Exception("A nova senha não pode ser igual à senha atual.");
-
+            catch (Exception ex)
+            {
+                // Captura qualquer exceção e loga o erro (pode-se adicionar um logger aqui)
+                throw new Exception("Ocorreu um erro ao alterar a senha: " + ex.Message);
             }
-
-            usuarioDb.SetNovaSenha(alterarSenha.NovaSenha);
-
-
-            var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, alterarSenha.Id);
-            var update = Builders<UsuarioModel>.Update.Set(x => x.Senha, alterarSenha.NovaSenha.GerarHash());
-
-            var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
-
-            return resultado.ModifiedCount > 0;
         }
 
+        // Método para redefinir a senha de um usuário
+        public async Task<bool> RedefinirSenha(string id, string novaSenha)
+        {
+            try
+            {
+                // Busca o usuário no banco de dados pelo ID fornecido
+                var usuarioDb = await _usuarioCollection.FindAsync(x => x.Id == id);
 
+                // Se o usuário não for encontrado, retorna false
+                if (usuarioDb == null) return false;
 
+                // Gera o hash para a nova senha
+                novaSenha = novaSenha.GerarHash();
+
+                // Cria o filtro para encontrar o usuário no banco de dados pelo ID
+                var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, id);
+
+                // Cria o comando de atualização para definir a nova senha (já gerada com hash)
+                var update = Builders<UsuarioModel>.Update.Set(x => x.Senha, novaSenha);
+
+                // Executa a atualização no banco de dados
+                var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
+
+                // Retorna true se a senha foi atualizada com sucesso (modified count maior que 0)
+                return resultado.ModifiedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                // Captura qualquer exceção e loga o erro 
+                throw new Exception("Ocorreu um erro ao redefinir a senha: " + ex.Message);
+            }
+        }
     }
 }

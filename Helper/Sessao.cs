@@ -1,42 +1,54 @@
 ﻿using Newtonsoft.Json;
+using TravelShare.Helper.Interfaces;
 using TravelShare.Models;
 
 namespace TravelShare.Helper
 {
+    // A classe 'Sessao' implementa a interface ISessao e gerencia a sessão do usuário na aplicação.
+    // Ela utiliza o IHttpContextAccessor para acessar e manipular as sessões armazenadas no HTTP.
     public class Sessao : ISessao
     {
+        // O IHttpContextAccessor é injetado para permitir o acesso ao contexto HTTP atual.
         private readonly IHttpContextAccessor _httpContext;
 
+        // Construtor que recebe o IHttpContextAccessor, permitindo o acesso à sessão do usuário.
         public Sessao(IHttpContextAccessor httpContext)
         {
             _httpContext = httpContext;
         }
 
+        // Método que busca a sessão do usuário logado.
+        // Retorna o usuário da sessão ou null se não houver sessão.
         public UsuarioModel BuscarSessaoDoUsuario()
         {
-            string sessaoDoUsuario = _httpContext.HttpContext.Session.GetString("sessaoUsuarioLogado");
+            // Recupera a sessão do usuário do contexto HTTP
+            string sessaoDoUsuario = _httpContext.HttpContext.Session.GetString("SessaoDoUsuarioLogado");
 
-            if (string.IsNullOrEmpty(sessaoDoUsuario)) return null;
-
-            try
-            {
-                return JsonConvert.DeserializeObject<UsuarioModel>(sessaoDoUsuario);
-            }
-            catch (JsonException)
-            {
+            // Se a sessão estiver vazia ou nula, retorna null
+            if (string.IsNullOrEmpty(sessaoDoUsuario))
                 return null;
-            }
+
+            // Se a sessão contiver dados, deserializa e retorna o objeto UsuarioModel
+            return JsonConvert.DeserializeObject<UsuarioModel>(sessaoDoUsuario);
         }
 
+        // Método para criar uma nova sessão para o usuário.
+        // O objeto usuário é convertido para uma string JSON e armazenado na sessão.
         public void CriarSessaoDoUsuario(UsuarioModel usuario)
         {
+            // Serializa o objeto usuário para uma string JSON
             string valor = JsonConvert.SerializeObject(usuario);
-            _httpContext.HttpContext.Session.SetString("sessaoUsuarioLogado", valor);
+
+            // Armazena a string JSON da sessão do usuário no contexto HTTP
+            _httpContext.HttpContext.Session.SetString("SessaoDoUsuarioLogado", valor);
         }
 
-        public void RemoverSessaoUsuario()
+        // Método para remover a sessão do usuário.
+        // Esse método limpa a sessão armazenada no contexto HTTP.
+        public void RemoverSessaoDoUsuario()
         {
-            _httpContext.HttpContext.Session.Remove("sessaoUsuarioLogado");
+            // Remove a chave "SessaoDoUsuarioLogado" da sessão
+            _httpContext.HttpContext.Session.Remove("SessaoDoUsuarioLogado");
         }
     }
 }

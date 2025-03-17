@@ -1,14 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using TravelShare.Enums;
 using TravelShare.Filters;
-using TravelShare.Helper;
+using TravelShare.Helper.Interfaces;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Controllers
 {
-    [PaginaParaUsuarioLogado]
+    // Controller responsável por gerenciar as ações relacionadas ao seguimento de outros usuários.
+    // Métodos:
+    // 1. SeguirOuDeseguir: Permite que o usuário siga ou deixe de seguir outro usuário. 
+    //    Além disso, dispara uma notificação quando um usuário começa a seguir outro.
+    // 2. RemoverSeguidor: Permite que o usuário remova um seguidor de sua lista de seguidores, caso este exista.
+    [PaginaParaUsuarioLogado] // - Acesso apenas para usuários logados
     public class SeguidorController : Controller
     {
         private readonly ISeguidorRepository _seguidorRepository;
@@ -17,82 +21,103 @@ namespace TravelShare.Controllers
 
         public SeguidorController(ISeguidorRepository seguidorRepository, ISessao sessao, INotificacaoRepository notificacaoRepository)
         {
-            _seguidorRepository = seguidorRepository;
-            _sessao = sessao;
-            _notificacaoRepository = notificacaoRepository;
+            _seguidorRepository = seguidorRepository ?? throw new ArgumentNullException(nameof(seguidorRepository));
+            _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao));
+            _notificacaoRepository = notificacaoRepository ?? throw new ArgumentNullException(nameof(notificacaoRepository));
         }
 
+        // Classe interna para a requisição de seguir ou deixar de seguir um usuário
         public class SeguirRequest
         {
-            public string SeguindoId { get; set; }
-            public string UsuarioId { get; set; }
+            public required string SeguindoId { get; set; }
+            public required string UsuarioId { get; set; }
         }
 
+        // Método para seguir ou deixar de seguir um usuário. A ação é baseada no estado atual de seguimento.
         [HttpPost]
         public async Task<IActionResult> SeguirOuDeseguir([FromBody] SeguirRequest request)
         {
-            if (string.IsNullOrEmpty(request.SeguindoId) || string.IsNullOrEmpty(request.UsuarioId))
+            try
             {
-                return Json(new { success = false, message = "Informações inválidas." });
-            }
-
-            var usuario = _sessao.BuscarSessaoDoUsuario();
-
-            var usuarioSeguindo = await _seguidorRepository.BuscarSeguindoAsync(usuario.Id, request.SeguindoId);
-
-            if (usuarioSeguindo == null)
-            {
-                await _seguidorRepository.SeguirUsuarioAsync(usuario.Id, request.SeguindoId);
-
-                var notificacao = new NotificacaoModel
+                // Validação dos parâmetros da requisição
+                if (string.IsNullOrEmpty(request.SeguindoId) || string.IsNullOrEmpty(request.UsuarioId))
                 {
-                    UsuarioDestino = request.SeguindoId,
-                    UsuarioOrigem = usuario.Id,
-                    Notificacao = NotificacaoEnum.SeguiuVoce,
-                    DataCriacao = DateTime.UtcNow,
-                    ComentarioId = null,
-                    PostId = null
-                };
+                    return Json(new { success = false, message = "Informações inválidas." });
+                }
 
-                await _notificacaoRepository.AddNotificacaoAsync(notificacao);
-
-            }
-            else
-            {
-                await _seguidorRepository.DeseguirUsuarioAsync(usuario.Id, request.SeguindoId);
-
-                await _notificacaoRepository.RemoverNotificacaoAsync(usuario.Id, request.SeguindoId, NotificacaoEnum.SeguiuVoce, null);
-
-            }
-
-            return Json(new { success = true });
-        }
-
-
-        [HttpPost]
-        public async Task<IActionResult> RemoverSeguidor(string seguidorId)
-        {
-            if (string.IsNullOrEmpty(seguidorId))
-            {
-                TempData["Message"] = "Não foi possível executar essa ação.";
-                return Redirect(Request.Headers["Referer"].ToString());
-            }
-            else
-            {
                 var usuario = _sessao.BuscarSessaoDoUsuario();
 
-                var seguidor = await _seguidorRepository.BuscarSeguidorAsync(usuario.Id, seguidorId);
+                // Verifica se o usuário já segue a pessoa
+                var usuarioSeguindo = await _seguidorRepository.BuscarSeguindoAsync(usuario.Id, request.SeguindoId);
 
-                if (seguidor != null)
+                // Se o usuário não segue, realiza o seguimento e cria uma notificação
+                if (usuarioSeguindo == null)
                 {
-                    await _seguidorRepository.RemoverSeguidorAsync(usuario.Id, seguidorId);
+                    await _seguidorRepository.SeguirUsuarioAsync(usuario.Id, request.SeguindoId);
+
+                    var notificacao = new NotificacaoModel
+                    {
+                        UsuarioDestinoId = request.SeguindoId,
+                        UsuarioOrigemId = usuario.Id,
+                        Notificacao = NotificacaoEnum.SeguiuVoce,
+                        DataCriacao = DateTime.UtcNow,
+                        ComentarioId = null,
+                        PostId = null
+                    };
+
+                    // Cria a notificação para o usuário seguido
+                    await _notificacaoRepository.AddNotificacaoAsync(notificacao);
                 }
                 else
                 {
-                    TempData["Message"] = "Não foi possível remover o seguidor.";
+                    // Se o usuário já segue, realiza o deseguir e remove a notificação
+                    await _seguidorRepository.DeseguirUsuarioAsync(usuario.Id, request.SeguindoId);
+                    await _notificacaoRepository.RemoverNotificacaoAsync(usuario.Id, request.SeguindoId, NotificacaoEnum.SeguiuVoce, null);
                 }
+
+                // Retorna uma resposta JSON indicando que a operação foi bem-sucedida
+                return Json(new { success = true });
             }
-            return Redirect(Request.Headers["Referer"].ToString());
+            catch (Exception ex)
+            {
+                // Captura qualquer erro e retorna uma mensagem de falha
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // Método para remover um seguidor
+        [HttpPost]
+        public async Task<IActionResult> RemoverSeguidor(string seguidorId)
+        {
+            try
+            {
+                // Validação para garantir que o ID do seguidor foi fornecido
+                if (string.IsNullOrEmpty(seguidorId))
+                {
+                    return Json(new { success = false, message = "seguidorId é nulo" });
+                }
+
+                var usuario = _sessao.BuscarSessaoDoUsuario();
+
+                // Verifica se o seguidor existe
+                var seguidor = await _seguidorRepository.BuscarSeguidorAsync(usuario.Id, seguidorId);
+
+                if (seguidor == null)
+                {
+
+                    return Json(new { success = false, message = "Seguidor não encontrado." });
+                    
+                }
+
+                await _seguidorRepository.RemoverSeguidorAsync(usuario.Id, seguidorId);
+
+                return Json(new { success = true });
+
+                           }
+            catch (Exception)
+            {
+                return Json(new { success = false, message = "Ocorreu um erro ao remover o seguidor. Tente novamente mais tarde." });
+            }
         }
     }
 }

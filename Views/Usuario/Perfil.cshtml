@@ -1,51 +1,53 @@
-﻿@model UsuarioModel
-
-@{
-    var posts = ViewBag.PostsDoUsuario as List<PostModel>;
-    var usuarioLogadoId = ViewBag.UsuarioLogadoId as string;
-    bool perfilDoUsuarioLogado = ViewBag.PerfilDoUsuarioLogado as bool? ?? false;
-}
+﻿@model UsuarioViewModel
 
 <div class="container mt-3">
     <div class="d-flex mb-4 position-relative">
         <!-- Foto de Perfil -->
         <div class="mx-4">
-            <img src="@Url.Content(Model.ImagemPerfil)" class="rounded-circle border border-4 border-dark" alt="Foto do Perfil" style="width: 200px; height: 200px; object-fit: cover;">
+            <img src="@Url.Content(Model.UsuarioPerfil?.ImagemPerfil)" class="rounded-circle border border-4 border-dark" alt="Foto do Perfil" style="width: 200px; height: 200px; object-fit: cover;">
         </div>
 
         <!-- Informações do Usuário -->
         <div class="mb-1">
             <div class="d-flex align-items-center mb-0">
                 <!-- Nome do Usuário -->
-                <h3 class="mb-0">@Model.Nome</h3>
+                <h3 class="mb-0">@Model.UsuarioPerfil?.Nome</h3>
             </div>
-            <p class="fw-bold mb-2">@@@Model.Username</p>
-            <div class="d-flex gap-4 mb-2">
-                <a class="text-decoration-none text-secondary" href="#postsSection"><strong>@posts.Count</strong> posts</a>
-                <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguidores" asp-route-id="@Model.Id"><strong>@Model.Seguidores.Count</strong> seguidores</a>
-                <a class="text-decoration-none text-secondary" asp-controller="Usuario" asp-action="Seguindo" asp-route-id="@Model.Id"><strong>@Model.Seguindo.Count</strong> seguindo</a>
-                <span><strong>@Model.CidadesVisitadas.Count</strong> cidades no mapa</span>
+            <p class="fw-bold mb-2">@@@Model.UsuarioPerfil?.Username</p>
+            <div class="d-flex gap-4 mb-2 align-content-start">
+                <!-- Link para exibir posts do usuário -->
+                <a class="text-decoration-none text-secondary" href="#postsSection"><strong>@Model.Posts.Count</strong> posts</a>
+
+                <!-- Botões que abrem os modais de Seguidores e Seguindo -->
+                <button class="btn btn-link text-decoration-none text-secondary" data-bs-toggle="modal" data-bs-target="#seguidoresModal">
+                    <strong>@Model.UsuarioPerfil?.Seguidores.Count</strong> seguidores
+                </button>
+                <button class="btn btn-link text-decoration-none text-secondary" data-bs-toggle="modal" data-bs-target="#seguindoModal">
+                    <strong>@Model.UsuarioPerfil?.Seguindo.Count</strong> seguindo
+                </button>
+                <span><strong>@Model.UsuarioPerfil?.CidadesVisitadas.Count</strong> cidades no mapa</span>
             </div>
             <p class="mb-1">
-                <i class="bi bi-geo-alt"></i> @Model.CidadeDeNascimento
+                <i class="bi bi-geo-alt"></i> @Model.UsuarioPerfil?.CidadeDeNascimento
             </p>
-            <p class="mb-2">@Model.Bio</p>
+            <p class="mb-2">@Model.UsuarioPerfil?.Bio</p>
         </div>
 
-        @if (usuarioLogadoId == Model.Id)
+        <!-- Botão para editar perfil, visível apenas para o usuário logado -->
+        @if (Model.PerfilDoUsuarioLogado)
         {
-            <!-- Botões no canto superior direito -->
             <div class="position-absolute top-0 end-0 mt-3 me-2 d-flex">
-                <a class="btn btn-outline-dark" asp-controller="Usuario" asp-action="EditarPerfil" asp-route-id="@Model.Id">
+                <a class="btn btn-outline-dark" asp-controller="Usuario" asp-action="EditarPerfil" asp-route-id="@Model.UsuarioPerfil?.Id">
                     <i class="bi bi-pencil p-1">  Perfil</i>
                 </a>
             </div>
         }
         else
         {
+            <!-- Formulário para seguir ou deixar de seguir o usuário -->
             <div class="d-flex mt-3 ms-5">
-                <form class="seguirOuDeseguirForm" data-seguindo-id="@Model.Id.ToString()" data-usuario-id="@usuarioLogadoId" method="post">
-                    @if (Model.Seguidores == null || !Model.Seguidores.Contains(usuarioLogadoId))
+                <form class="seguirOuDeseguirForm" data-seguindo-id="@Model.UsuarioPerfil?.Id.ToString()" data-usuario-id="@Model.UsuarioLogadoId" method="post">
+                    @if (Model.UsuarioPerfil?.Seguidores == null || !Model.UsuarioPerfil.Seguidores.Contains(Model.UsuarioLogadoId))
                     {
                         <button type="submit" class="btn btn-dark"> Seguir </button>
                     }
@@ -55,25 +57,25 @@
                     }
                 </form>
             </div>
-
         }
     </div>
 
-    <!-- Mapa -->
+    <!-- Mapa (Atualmente oculto com display:none) -->
     <div class="container mt-2 mb-3 d-flex justify-content-center border-top border-bottom border-dark" style="display:none;">
         <div class="m-3" id="map" style="height: 350px; width: 90%;"></div>
-        <div id="dadosCidades" data-cidades='@Html.Raw(Json.Serialize(Model.CidadesVisitadas))'></div>
-        <div id="cidadeNascimento" data-cidadeNascimento="@Model.CidadeDeNascimento"></div>
+        <div id="dadosCidades" data-cidades='@Html.Raw(Json.Serialize(Model.UsuarioPerfil?.CidadesVisitadas))'></div>
+        <div id="cidadeNascimento" data-cidadeNascimento="@Model.UsuarioPerfil?.CidadeDeNascimento"></div>
     </div>
 
     <!-- Feed de Posts -->
     <div class="row g-3 pb-5 mx-3" id="postsSection">
-        @if (posts != null && posts.Any())
+        @if (Model.Posts != null && Model.Posts.Any())
         {
-            foreach (var post in posts)
+            foreach (var post in Model.Posts)
             {
                 <div class="col-6 col-md-4">
                     <div class="position-relative">
+                        <!-- Imagem do post, que abre o modal de detalhes do post -->
                         <img src="@Url.Content(post.ImagemPost.FirstOrDefault())"
                              class="img-fluid rounded"
                              alt="Imagem do Post"
@@ -83,13 +85,13 @@
                     </div>
                 </div>
 
-                <!-- Modal do Post -->
+                <!-- Modal do Post (Com carrossel de imagens e interações) -->
                 <div class="modal fade" id="postModal_@post.Id" tabindex="-1" aria-labelledby="postModalLabel_@post.Id" aria-hidden="true">
                     <div class="modal-dialog modal-xl">
                         <div class="modal-content">
                             <div class="modal-body p-0">
                                 <div class="row g-0">
-                                    <!-- Carrossel de Imagens -->
+                                    <!-- Carrossel de imagens do post -->
                                     <div class="col-md-7">
                                         <div id="carouselPostImages_@post.Id" class="carousel slide" data-bs-ride="carousel">
                                             <div class="carousel-inner">
@@ -100,7 +102,7 @@
                                                     </div>
                                                 }
                                             </div>
-                                            <!-- Controles do Carrossel -->
+                                            <!-- Controles do carrossel -->
                                             <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
                                                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                                 <span class="visually-hidden">Anterior</span>
@@ -110,34 +112,33 @@
                                                 <span class="visually-hidden">Próximo</span>
                                             </button>
                                         </div>
-
                                     </div>
 
-                                    <!-- Informações do Post -->
+                                    <!-- Informações do post e interações -->
                                     <div class="col-md-5 d-flex flex-column">
-                                        <!-- Header do Post -->
+                                        <!-- Header do post (foto de perfil do usuário, nome e localização) -->
                                         <div class="d-flex align-items-center border-bottom p-3">
-                                            <img src="@Url.Content(Model.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <img src="@Url.Content(Model.UsuarioPerfil?.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                                             <div>
-                                                <h5 class="ms-3 mb-0 fw-bold">@Model.Nome</h5>
+                                                <h5 class="ms-3 mb-0 fw-bold">@Model.UsuarioPerfil?.Nome</h5>
                                                 <p class="ms-3 mb-0">@post.Localizacao</p>
                                             </div>
                                             <div class="ms-auto">
-                                                @if (Model.Id == usuarioLogadoId)
+                                                @if (Model.PerfilDoUsuarioLogado)
                                                 {
+                                                    <!-- Botão para editar o post (visível apenas para o autor do post) -->
                                                     <a class="btn btn-outline-dark btn-sm ms-auto" asp-controller="Post" asp-action="EditarPost" asp-route-id="@post.Id"><i class="bi bi-pencil"> Editar</i></a>
                                                 }
                                             </div>
                                         </div>
 
-                                        <!-- Legenda e Comentários -->
+                                        <!-- Legenda do post e lista de comentários -->
                                         <div class="flex-grow-1 p-3 overflow-auto">
-                                            <!-- Legenda -->
                                             <div>
-                                                <p class="mb-1"><strong>@Model.Username</strong> @post.Legenda</p>
+                                                <p class="mb-1"><strong>@Model.UsuarioPerfil?.Username</strong> @post.Legenda</p>
                                             </div>
 
-                                            <!-- Comentários -->
+                                            <!-- Comentários do post -->
                                             <div class="comentariosLista mt-3" data-post-id="@post.Id" style="max-height: 320px; overflow-y: auto; word-wrap: break-word;">
                                                 @if (post.Comentarios.Any())
                                                 {
@@ -146,7 +147,8 @@
                                                         <div id="comentario-@comentario.Id" class="mb-2" style="position: relative;">
                                                             <p class="mb-0 ps-2" style="white-space: pre-wrap;"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
 
-                                                            @if (usuarioLogadoId == Model.Id || comentario.UsuarioId == usuarioLogadoId)
+                                                            <!-- Botão para excluir comentário, visível apenas para o autor ou o usuário logado -->
+                                                            @if (Model.PerfilDoUsuarioLogado || comentario.UsuarioId == Model.UsuarioLogadoId)
                                                             {
                                                                 <form class="deleteComentarioForm" method="post" style="position: absolute; top: 0; right: 0;">
                                                                     <input type="hidden" name="id" value="@comentario.Id" />
@@ -159,45 +161,30 @@
                                                     }
                                                 }
                                             </div>
-
-
                                         </div>
 
-                                        <!-- Área de Interações -->
+                                        <!-- Área de Interações (Curtir, comentar) -->
                                         <div class="border-top p-3">
-                                            <!-- Botão de Curtida -->
+                                            <!-- Botão de curtida -->
                                             <div class="d-flex align-items-center mb-3">
-
                                                 <form class="d-inline">
                                                     <input type="hidden" name="postId" value="@post.Id" />
                                                     <button type="button"
-                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(usuarioLogadoId) ? "text-danger" : "text-secondary")"
+                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogadoId) ? "text-danger" : "text-secondary")"
                                                             data-post-id="@post.Id">
-                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(usuarioLogadoId) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogadoId) ? "bi-heart-fill" : "bi-heart")"></i>
+                                                        <span class="ms-2">@post.Curtidas?.Count</span>
                                                     </button>
                                                 </form>
-
-                                                <span class="ms-2">@post.Curtidas?.Count curtidas</span>
-                                                <i class="bi bi-chat fs-5 ms-2"></i>
-                                                <span class="ms-2">@post.Comentarios.Count comentários</span>
-                                                <p class="mb-0 text-muted ms-auto">@post.DataCriacao.TempoDecorridoPost()</p>
-
                                             </div>
 
-                                            <!-- Formulário de Adicionar Comentário -->
-                                            <form class="addComentarioForm d-flex">
-                                                <input type="hidden" name="postId" value="@post.Id" />
-                                                <div class="input-group">
-                                                    <span class="input-group-text text-secondary"><i class="bi bi-chat"></i></span>
-                                                    <input type="text" name="comentario" class="form-control" placeholder="Adicionar um comentário..." maxlength="100" required />
-                                                    <button type="submit" class="btn btn-dark">Publicar</button>
-                                                </div>
-                                            </form>
-
+                                            <!-- Caixa de comentário -->
+                                            <div class="d-flex align-items-center">
+                                                <input type="text" class="form-control me-2" placeholder="Escreva um comentário..." id="comentarioInput_@post.Id">
+                                                <button class="btn btn-outline-dark btn-sm" data-post-id="@post.Id" id="commentButton_@post.Id">Comentar</button>
+                                            </div>
                                         </div>
-
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -205,11 +192,17 @@
                 </div>
             }
         }
-        else
-        {
-            <div class="col-12 text-center">
-                <p class="text-muted">Ainda não há posts para mostrar.</p>
-            </div>
-        }
     </div>
 </div>
+
+@section scripts {
+    <script>
+        const apiKey = '@ViewBag.GoogleApiKey';  // Acessando a chave via ViewBag
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+    </script>
+    <script src="~/js/googleApi.js"></script>
+}

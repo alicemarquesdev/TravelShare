@@ -1,13 +1,23 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
-using System.Text.RegularExpressions;
 using TravelShare.Data;
-using TravelShare.Helper;
+using TravelShare.Helper.Interfaces;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Repository
 {
+    // Repositório responsável por gerenciar as operações relacionadas aos usuários.
+    // Métodos disponíveis:
+    // - BuscarUsuarioPorIdAsync(string id): Busca um usuário pelo seu ID.
+    // - BuscarUsuarioPorEmailOuUsernameAsync(string emailOuUsername): Busca um usuário por email ou username.
+    // - PesquisarUsuariosAsync(string termo): Pesquisa usuários com base em um termo.
+    // - BuscarVariosUsuariosPorIdAsync(List<string> ids): Busca vários usuários por seus IDs.
+    // - BuscarTodosOsUsuariosAsync(): Busca todos os usuários cadastrados.
+    // - BuscarSugestoesParaSeguirAsync(string id): Busca sugestões de usuários para seguir.
+    // - AddUsuarioAsync(UsuarioModel usuario): Adiciona um novo usuário.
+    // - AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario): Atualiza as informações de um usuário.
+    // - DeletarUsuarioAsync(string id): Deleta um usuário.
     public class UsuarioRepository : IUsuarioRepository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
@@ -15,6 +25,7 @@ namespace TravelShare.Repository
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly ISessao _sessao;
 
+        // Construtor que recebe o contexto do MongoDB e o serviço de sessão
         public UsuarioRepository(MongoContext mongoContext, ISessao sessao)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
@@ -23,46 +34,39 @@ namespace TravelShare.Repository
             _sessao = sessao;
         }
 
-        public async Task<UsuarioModel> BuscarUsuarioPorIdAsync(string id)
+        // Método que busca um usuário pelo seu ID
+        public async Task<UsuarioModel?> BuscarUsuarioPorIdAsync(string id)
         {
-            return await _usuarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+            try
+            {
+                return await _usuarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar usuario" + ex.Message);
+            }
         }
 
-        public async Task<List<UsuarioModel>> BuscarVariosUsuariosPorIdAsync(List<string> ids)
+        // Método que busca um usuário por email ou username
+        public async Task<UsuarioModel?> BuscarUsuarioPorEmailOuUsernameAsync(string emailOuUsername)
         {
-            return await _usuarioCollection.Find(usuario => ids.Contains(usuario.Id)).ToListAsync();
+            try
+            {                return await _usuarioCollection
+                    .Find(x => x.Email.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase) ||
+                               x.Username.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase))
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar usuario" + ex.Message);
+            }
         }
 
-        public async Task<List<UsuarioModel>> BuscarSugestoesParaSeguirAsync(string id)
-        {
-            var usuario = await BuscarUsuarioPorIdAsync(id);
-
-            if (usuario == null) throw new NullReferenceException("Nenhum usuário encontrado");
-
-            var idsSeguindo = usuario.Seguindo ?? new List<string>();
-
-            var sugestoesUsuarios = await _usuarioCollection.Find(x => x.Id != id && !idsSeguindo.Contains(x.Id)).SortByDescending(x => x.DataRegistro).Limit(12).ToListAsync();
-
-            return sugestoesUsuarios;
-        }
-
-        public async Task<UsuarioModel> BuscarUsuarioPorEmailOuUsernameAsync(string emailOuUsername)
-        {
-            return await _usuarioCollection
-                .Find(x => x.Email.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase) ||
-                           x.Username.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase))
-                .FirstOrDefaultAsync();
-        }
-
+        // Método que pesquisa usuários por um termo de pesquisa (nome, username ou cidade)
         public async Task<List<UsuarioModel>> PesquisarUsuariosAsync(string termo)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(termo))
-                {
-                    return new List<UsuarioModel>(); // Retorna uma lista vazia se o termo for inválido
-                }
-
                 var filtro = Builders<UsuarioModel>.Filter.Or(
                     Builders<UsuarioModel>.Filter.Regex(x => x.Nome, new BsonRegularExpression(termo, "i")),
                     Builders<UsuarioModel>.Filter.Regex(x => x.Username, new BsonRegularExpression(termo, "i")),
@@ -73,105 +77,125 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao pesquisar usuários: {ex.Message}");
-                return new List<UsuarioModel>(); // Retorna uma lista vazia em caso de erro
+                throw new Exception("Erro ao buscar usuarios" + ex.Message);
             }
         }
 
-        public async Task AddUsuarioAsync(UsuarioModel usuario)
+        // Método que busca vários usuários pelos seus IDs
+        public async Task<List<UsuarioModel>> BuscarVariosUsuariosPorIdAsync(List<string> ids)
         {
-            usuario.Nome.Trim();
-            usuario.Email.ToLower().Trim();
-            usuario.Username.ToLower().Trim();
-            usuario.SetSenhaHash();
-            await _usuarioCollection.InsertOneAsync(usuario);
-        }
-
-        public async Task<bool> AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario)
-        {
-            var usuarioDb = await BuscarUsuarioPorIdAsync(usuario.Id);
-
-            if (usuarioDb == null) throw new NullReferenceException("Usuário não encontrado!");
-
-            string caminhoImagemAntiga = null;
-
-            if (usuarioDb.ImagemPerfil != usuario.ImagemPerfil)
+            try
             {
-                caminhoImagemAntiga = usuarioDb.ImagemPerfil;
+                return await _usuarioCollection.Find(usuario => ids.Contains(usuario.Id)).ToListAsync();
             }
-
-            // Criar filtro para localizar o documento pelo ID
-            var filter = Builders<UsuarioModel>.Filter.Eq(u => u.Id, usuario.Id);
-
-            // Criar as atualizações apenas com os campos relevantes
-            var update = Builders<UsuarioModel>.Update
-                .Set(u => u.ImagemPerfil, usuario.ImagemPerfil)
-                .Set(u => u.Nome, usuario.Nome)
-                .Set(u => u.Username, usuario.Username.ToLower().Trim())
-                .Set(u => u.Email, usuario.Email.ToLower().Trim())
-                .Set(u => u.DataNascimento, usuario.DataNascimento)
-                .Set(u => u.CidadeDeNascimento, usuario.CidadeDeNascimento)
-                .Set(u => u.Bio, usuario.Bio ?? string.Empty);
-
-            // Atualizar o documento na coleção
-            var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
-
-            // Verificar se algum documento foi modificado
-            if (resultado.ModifiedCount == 0) return false;
-
-            if (!string.IsNullOrEmpty(caminhoImagemAntiga))
+            catch (Exception ex)
             {
-                try
-                {
-                    // Aqui você define o caminho onde as fotos são armazenadas
-                    var caminhoFoto = Path.Combine(caminhoImagemAntiga);
-
-                    if (File.Exists(caminhoFoto))
-                    {
-                        File.Delete(caminhoFoto); // Deleta o arquivo do servidor
-                        Console.WriteLine($"Foto do perfil antiga excluída: {caminhoImagemAntiga}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erro ao tentar excluir a foto antiga: {ex.Message}");
-                }
+                throw new Exception("Erro ao buscar usuarios" + ex.Message);
             }
-
-            return true;
         }
 
-        public async Task<bool> DeletarUsuarioAsync(string id)
-        {
-            var posts = await _postCollection.DeleteManyAsync(x => x.UsuarioId == id);
-
-            var comentario = await _comentarioCollection.DeleteManyAsync(x => x.UsuarioId == id);
-
-            var deleteUsuario = await _usuarioCollection.DeleteOneAsync(x => x.Id == id);
-            _sessao.RemoverSessaoUsuario();
-
-            return deleteUsuario.DeletedCount > 0;
-        }
-
-        public async Task<bool> RedefinirSenha(string id, string novaSenha)
-        {
-            var usuarioDb = await BuscarUsuarioPorIdAsync(id);
-
-            if (usuarioDb == null) return false;
-
-            novaSenha = novaSenha.GerarHash();
-
-            var filter = Builders<UsuarioModel>.Filter.Eq(x => x.Id, id);
-            var update = Builders<UsuarioModel>.Update.Set(x => x.Senha, novaSenha);
-
-            var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
-
-            return resultado.ModifiedCount > 0;
-        }
-
+        // Método que busca todos os usuários cadastrados
         public async Task<List<UsuarioModel>> BuscarTodosOsUsuariosAsync()
         {
-            return await _usuarioCollection.Find(Builders<UsuarioModel>.Filter.Empty).ToListAsync(); 
+            try
+            {
+                return await _usuarioCollection.Find(_ => true).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+            }
+        }
+
+        // Método que sugere usuários para seguir (exceto o próprio usuário e os já seguidos)
+        public async Task<List<UsuarioModel>> BuscarSugestoesParaSeguirAsync(string id)
+        {
+            try
+            {
+                var usuario = await BuscarUsuarioPorIdAsync(id);
+                if (usuario == null) throw new NullReferenceException("Nenhum usuário encontrado");
+
+                var idsSeguindo = usuario.Seguindo ?? new List<string>();
+
+                return await _usuarioCollection
+                    .Find(x => x.Id != id && !idsSeguindo.Contains(x.Id))
+                    .SortByDescending(x => x.DataRegistro)
+                    .Limit(12)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+            }
+        }
+
+        // Método que adiciona um novo usuário
+        public async Task AddUsuarioAsync(UsuarioModel usuario)
+        {
+            try
+            {
+                usuario.Nome = usuario.Nome.Trim();
+                usuario.Email = usuario.Email.ToLower().Trim();
+                usuario.Username = usuario.Username.ToLower().Trim();
+                usuario.SetSenhaHash();
+                await _usuarioCollection.InsertOneAsync(usuario);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao adicionar usuario" + ex.Message);
+            }
+        }
+
+        // Método que atualiza as informações de um usuário (sem senha)
+        public async Task<bool> AtualizarUsuarioAsync(UsuarioSemSenhaModel usuario)
+        {
+            try
+            {
+                var usuarioDb = await BuscarUsuarioPorIdAsync(usuario.Id);
+                if (usuarioDb == null) throw new NullReferenceException("Usuário não encontrado no banco de dados!");
+
+                var filter = Builders<UsuarioModel>.Filter.Eq(u => u.Id, usuario.Id);
+                var update = Builders<UsuarioModel>.Update
+                    .Set(u => u.ImagemPerfil, usuario.ImagemPerfil)
+                    .Set(u => u.Nome, usuario.Nome)
+                    .Set(u => u.Username, usuario.Username.ToLower().Trim())
+                    .Set(u => u.Email, usuario.Email.ToLower().Trim())
+                    .Set(u => u.DataNascimento, usuario.DataNascimento)
+                    .Set(u => u.CidadeDeNascimento, usuario.CidadeDeNascimento)
+                    .Set(u => u.Bio, usuario.Bio ?? string.Empty);
+
+                var resultado = await _usuarioCollection.UpdateOneAsync(filter, update);
+                return resultado.ModifiedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao atualizar usuario" + ex.Message);
+
+            }
+        }
+
+        // Método que deleta um usuário, seus posts e comentários associados
+        public async Task<bool> DeletarUsuarioAsync(string id)
+        {
+            try
+            {
+                var usuarioDb = await BuscarUsuarioPorIdAsync(id);
+                if (usuarioDb == null) throw new NullReferenceException("Usuário não encontrado no banco de dados!");
+
+                await _postCollection.DeleteManyAsync(x => x.UsuarioId == id);
+                await _comentarioCollection.DeleteManyAsync(x => x.UsuarioId == id);
+
+                var deleteUsuario = await _usuarioCollection.DeleteOneAsync(x => x.Id == id);
+
+                _sessao.RemoverSessaoDoUsuario();
+
+                return deleteUsuario.DeletedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao deletar usuario" + ex.Message);
+
+            }
         }
     }
 }

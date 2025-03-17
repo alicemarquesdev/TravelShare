@@ -1,152 +1,237 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using TravelShare.Filters;
 using TravelShare.Helper;
+using TravelShare.Helper.Interfaces;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Controllers
 {
-    [PaginaParaUsuarioLogado]
+    // Controlador responsável por gerenciar as ações relacionadas aos posts na aplicação.
+    // Métodos:
+    // 1. CriarPost (GET): Retorna a página de criação de um novo post.,    
+    // 2. EditarPost (GET): Exibe o post a ser editado, recuperando-o pelo ID.
+    // 3. CriarPost (POST): Processa a criação de um novo post, validando os dados, gerenciando imagens e salvando no banco.
+    // 4. EditarPost (POST): Atualiza o post existente no banco de dados.
+    // 5. DeletarPost (POST): Deleta um post, removendo também as imagens associadas ao post.
+
+    [PaginaParaUsuarioLogado] // - Restringe o acesso a usuários logados para garantir que apenas usuários autenticados possam interagir com os posts.
     public class PostController : Controller
     {
+        private readonly string _googleAPIKey;
         private readonly IPostRepository _postRepository;
-        private readonly IUsuarioRepository _usuarioRepository;
-        private readonly ICaminhoImagem _caminhoImagem;
         private readonly ISessao _sessao;
+        private readonly ICaminhoImagem _caminhoImagem;
+        private readonly ICidadesVisitadasRepository _cidadesVisitadasRepository;
+        private readonly ILogger<PostController> _logger;
 
-        public PostController(IPostRepository postRepository, IUsuarioRepository usuarioRepository, ISessao sessao, ICaminhoImagem caminhoImagem)
+        // Construtor do controlador, responsável por injetar as dependências.
+        // Se qualquer uma das dependências for nula, lança exceção para evitar erros.
+        public PostController(IOptions<GoogleAPISettings> googleAPISettings,
+                              IPostRepository postRepository, 
+                              ISessao sessao, 
+                              ICaminhoImagem caminhoImagem,
+                              ICidadesVisitadasRepository cidadesVisitadasRepository,
+                              ILogger<PostController> logger)
         {
-            _postRepository = postRepository;
-            _usuarioRepository = usuarioRepository;
-            _caminhoImagem = caminhoImagem;
-            _sessao = sessao;
+            _googleAPIKey = googleAPISettings.Value.ApiKey ?? throw new ArgumentNullException("A chave da API do Google não foi configurada corretamente.");
+            _postRepository = postRepository ?? throw new ArgumentNullException(nameof(postRepository), "Repositório de posts não pode ser nulo.");
+            _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao), "Sessão não pode ser nula.");
+            _caminhoImagem = caminhoImagem ?? throw new ArgumentNullException(nameof(caminhoImagem), "Caminho da imagem não pode ser nulo.");
+            _cidadesVisitadasRepository =  cidadesVisitadasRepository ?? throw new ArgumentNullException(nameof(cidadesVisitadasRepository), "Cidades Visitadas Repositorio não pode ser nulo.");
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger não pode ser nulo.");
         }
 
+        // Método responsável por exibir a página de criação de um novo post
         public IActionResult CriarPost()
         {
-            var usuario = _sessao.BuscarSessaoDoUsuario();
-
-            ViewBag.UsuarioLogadoId = usuario.Id;
+            ViewBag.GoogleApiKey = _googleAPIKey;
 
             return View();
         }
 
+        // Método para exibir o post para edição, buscando o post por ID.
         public async Task<IActionResult> EditarPost(string id)
         {
-            var post = await _postRepository.BuscarPostPorIdAsync(id);
+            try
+            {
+                // Busca o post pelo ID
+                var post = await _postRepository.BuscarPostPorIdAsync(id);
 
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
+                // Se o post não for encontrado, exibe uma mensagem e redireciona
+                if (post == null)
+                {
+                    throw new Exception("Post não encontrado");
+                }
 
-            ViewBag.UsuarioLogadoId = usuario.Id;
+                ViewBag.GoogleApiKey = _googleAPIKey;
 
-            return View(post);
+                // Caso o post seja encontrado, retorna a view de edição com o post
+                return View(post);
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro, registra o erro no log e exibe uma mensagem amigável ao usuário
+                _logger.LogError(ex, "Erro ao buscar o post para edição.");
+                TempData["Message"] = "Erro ao carregar o post para edição.";
+                return RedirectToAction("Perfil", "Usuario");  // Redireciona para o perfil do usuário
+            }
         }
 
+        // Método para criar um novo post, recebendo os dados do post e imagens
         [HttpPost]
         public async Task<IActionResult> CriarPost(PostModel post, IList<IFormFile> ImagemPost)
         {
             try
             {
-                if (ModelState.IsValid)
+                // Busca o usuário logado na sessão
+                var usuario = _sessao.BuscarSessaoDoUsuario();
+                if (usuario == null)
                 {
-                    // Lista para armazenar os caminhos das imagens
-                    var caminhosImagens = new List<string>();
+                    throw new Exception("Usuario não encontrado no banco de dados.");
+                }
 
-                    // Processa cada imagem da lista e gera o caminho
-                    foreach (var imagem in ImagemPost)
+                post.UsuarioId = usuario.Id;  // Atribui o ID do usuário ao post
+
+                // Verifica se o estado do modelo é válido (se todos os campos obrigatórios foram preenchidos corretamente)
+                if (!ModelState.IsValid)
+                {
+                    TempData["Message"] = "Dados inválidos, tente novamente.";  // Caso contrário, exibe mensagem de erro
+                    return View(post);  // Retorna à view com o post
+                }
+
+                // Lista para armazenar os caminhos das imagens que serão salvas
+                var caminhosImagens = new List<string>();
+
+                // Processa cada imagem recebida no formulário
+                foreach (var imagem in ImagemPost)
+                {
+
+                    // Gera o caminho do arquivo da imagem
+                    var caminhoImagem = await _caminhoImagem.GerarCaminhoArquivoAsync(imagem);
+
+                    // Se o caminho for nulo, significa que houve erro ao salvar a imagem
+                    if (caminhoImagem == null)
                     {
-                        try
-                        {
-                            var caminhoImagem = await _caminhoImagem.GerarCaminhoImagemAsync(imagem);
-                            if (caminhoImagem == null)
-                            {
-                                TempData["Message"] = "Ocorreu um erro ao salvar a imagem.";
-                                return View(post);
-                            }
-                            caminhosImagens.Add(caminhoImagem);
-                        }
-                        catch (Exception ex)
-                        {
-                            TempData["Message"] = "Erro ao processar a imagem: " + ex.Message;
-                            return View(post);
-                        }
+                        throw new Exception("Erro ao salvar imagem");
                     }
 
-                    // Adiciona os caminhos das imagens à propriedade ImagemPost
-                    post.ImagemPost = caminhosImagens;
-                    post.Id = ObjectId.GenerateNewId().ToString();
-
-                    // Chama o repositório para adicionar o post
-                    await _postRepository.AddPostAsync(post);
-
-                    TempData["Message"] = "Post publicado com sucesso!";
-                    return RedirectToAction("Perfil", "Usuario", new { id = post.UsuarioId });
+                    // Adiciona o caminho da imagem à lista
+                    caminhosImagens.Add(caminhoImagem);
                 }
-                TempData["Message"] = "Verifique os dados inseridos, não foi possível publicar o post.";
-                return View(post);
+
+                // Atribui os caminhos das imagens ao post
+                post.ImagemPost = caminhosImagens;
+                // Gera um novo ID para o post
+                post.Id = ObjectId.GenerateNewId().ToString();
+
+                // Chama o repositório para salvar o post no banco de dados
+                await _postRepository.AddPostAsync(post);
+
+                // Adicionar a localizacao do post no mapa.
+                await _cidadesVisitadasRepository.AddCidadeAsync(post.UsuarioId, post.Localizacao);
+
+                // Exibe mensagem de sucesso e redireciona para o perfil do usuário
+                TempData["Message"] = "Post publicado com sucesso!";
+                return RedirectToAction("Perfil", "Usuario", new { id = post.UsuarioId });
             }
             catch (Exception ex)
             {
-                TempData["Message"] = ex.Message;
-                return View(post);
+                // Registra erro no log e exibe mensagem de erro
+                _logger.LogError(ex, "Erro ao criar o post.");
+                TempData["Message"] = "Ocorreu um erro ao criar o post.";
+                return View(post);  // Retorna à view com o post
             }
         }
 
+        // Método para editar um post existente
         [HttpPost]
         public async Task<IActionResult> EditarPost(PostModel post)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // Recuperar imagens existentes (caso necessário)
-                var postExistente = await _postRepository.BuscarPostPorIdAsync(post.Id);
-
-                if (postExistente != null)
+                // Verifica se os dados do modelo são válidos antes de tentar salvar
+                if (!ModelState.IsValid)
                 {
-                    // Atualizar o post
-                    await _postRepository.AtualizarPostAsync(post);
-                    TempData["Message"] = "Post atualizado com sucesso";
-                    return RedirectToAction("EditarPost", new { id = post.Id });
+                    TempData["Message"] = "Dados inválidos, tente novamente.";  // Exibe mensagem de erro
+                    return View(post);  // Retorna à view com o post
                 }
-                TempData["Message"] = "Post não encontrado.";
-                return View(post);
+
+                // Busca o post existente pelo ID
+                var postExistente = await _postRepository.BuscarPostPorIdAsync(post.Id);
+                if (postExistente == null)
+                {
+                    throw new Exception("Post não encontrado no banco de dados.");
+                }
+
+                // Atualiza o post existente com os novos dados
+                await _postRepository.AtualizarPostAsync(post);
+                TempData["Message"] = "Post atualizado com sucesso.";  // Exibe mensagem de sucesso
+                return RedirectToAction("EditarPost", new { id = post.Id });  // Redireciona para a página de edição
+
             }
-            TempData["Message"] = "Não conseguimos atualizar os dados do post, verifique os dados inseridos.";
-            return View(post);
+            catch (Exception ex)
+            {
+                // Em caso de erro, registra no log e exibe uma mensagem amigável
+                _logger.LogError(ex, "Erro ao editar o post.");
+                TempData["Message"] = "Erro ao editar o post.";
+                return View(post);  // Retorna à view com o post
+            }
         }
 
+        // Método para deletar um post
         [HttpPost]
         public async Task<IActionResult> DeletarPost(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            try
             {
-                TempData["Message"] = "O ID do post não foi fornecido.";
-                return Redirect(Request.Headers["Referer"].ToString());
+                // Verifica se o ID do post foi fornecido
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["Message"] = "ID do post não fornecido.";  // Exibe mensagem de erro
+                    return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
+                }
+
+                // Busca o post existente pelo ID
+                var postExistente = await _postRepository.BuscarPostPorIdAsync(id);
+
+                // Se o post não for encontrado
+                if (postExistente == null)
+                {
+                    throw new Exception("Post não encontrado no banco de dados.");
+                }
+
+                // Cria lista para armazenar os caminhos das imagens do post
+                var postsCaminho = new List<string>(postExistente.ImagemPost);
+
+                // Deleta o post do repositório
+                var sucesso = await _postRepository.DeletarPostAsync(id);
+
+                // Se a exclusão for bem-sucedida, remove as imagens antigas
+                if (sucesso)
+                {
+                    foreach (var imagem in postsCaminho)
+                    {
+                        await _caminhoImagem.RemoverImagemAntiga(imagem);  // Remove as imagens do sistema de arquivos
+                    }
+
+                    TempData["Message"] = "Post deletado com sucesso.";  // Exibe mensagem de sucesso
+                    return RedirectToAction("Perfil", "Usuario");  // Redireciona para o perfil do usuário
+                }
+
+                // Caso não tenha sido possível deletar o post, exibe mensagem de erro
+                TempData["Message"] = "Erro ao deletar o post.";
+                return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
             }
-
-            // Verifica se o post existe
-            var postExistente = await _postRepository.BuscarPostPorIdAsync(id);
-
-            if (postExistente == null)
+            catch (Exception ex)
             {
-                TempData["Message"] = "Post não encontrado.";
-                return Redirect(Request.Headers["Referer"].ToString());
+                // Registra erro no log e exibe mensagem de erro
+                _logger.LogError(ex, "Erro ao deletar o post.");
+                TempData["Message"] = "Erro ao deletar o post.";
+                return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
             }
-
-            // Deletar o post
-            var sucesso = await _postRepository.DeletarPostAsync(id);
-
-            if (sucesso)
-            {
-                TempData["Message"] = "Post deletado com sucesso.";
-                return RedirectToAction("Perfil", "Usuario", new { id = postExistente.Usuario.Id });
-            }
-            else
-            {
-                TempData["Message"] = "Não foi possível deletar o post.";
-            }
-
-            return Redirect(Request.Headers["Referer"].ToString());
         }
     }
 }

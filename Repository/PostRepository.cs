@@ -5,165 +5,229 @@ using TravelShare.Repository.Interfaces;
 
 namespace TravelShare.Repository
 {
+    // Repositório responsável pela manipulação de posts e comentários.
+    // Métodos disponíveis:
+    // - BuscarPostPorIdAsync(string postId): Busca um post pelo ID.
+    // - BuscarTodosOsPostsSeguindoAsync(string id): Busca posts de usuários que o usuário está seguindo.
+    // - BuscarTodosOsPostsNaoSeguindoAsync(string id): Busca posts de usuários que o usuário não está seguindo.
+    // - BuscarTodosOsPostsDoUsuarioAsync(string usuarioId): Busca posts de um usuário específico.
+    // - AddPostAsync(PostModel post): Adiciona um novo post.
+    // - AtualizarPostAsync(PostModel post): Atualiza um post existente.
+    // - DeletarPostAsync(string id): Deleta um post.
     public class PostRepository : IPostRepository
     {
         private readonly IMongoCollection<PostModel> _postsCollection;
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IComentarioRepository _comentarioRepository;
-        private readonly IWebHostEnvironment _hostingEnvironment;
 
-
+        // Construtor que recebe o contexto do MongoDB, repositórios de usuários, comentários e ambiente de hospedagem
         public PostRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository,
-                IComentarioRepository comentarioRepository, IWebHostEnvironment hostingEnvironment)
+                IComentarioRepository comentarioRepository)
         {
             _postsCollection = mongoContext.GetCollection<PostModel>("Posts");
             _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentarios");
             _usuarioRepository = usuarioRepository;
             _comentarioRepository = comentarioRepository;
-            _hostingEnvironment = hostingEnvironment;
         }
 
+        // Método para buscar um post específico pelo seu ID
+        public async Task<PostModel?> BuscarPostPorIdAsync(string postId)
+        {
+            try
+            {
+                // Busca o post pelo ID
+                var post = await _postsCollection.Find(x => x.Id == postId).FirstOrDefaultAsync();
+                if (post == null) return null; // Retorna null se o post não for encontrado
+
+                // Busca informações adicionais sobre o usuário e os comentários do post
+                post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
+                post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
+
+                return post;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao buscar post por ID" + ex.Message);
+            }
+        }
+
+        // Método para buscar todos os posts de usuários que o usuário está seguindo
         public async Task<List<PostModel>> BuscarTodosOsPostsSeguindoAsync(string id)
         {
-            var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
-
-            if (usuario == null) return new List<PostModel>();
-
-            // Criar uma lista de IDs contendo o próprio usuário + seguidores
-            var idsParaBuscar = new List<string> { id }; // Adiciona o próprio usuário
-
-            if (usuario.Seguindo != null)
+            try
             {
-                idsParaBuscar.AddRange(usuario.Seguindo); // Adiciona os seguidores
+                // Busca o usuário 
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
+                if (usuario == null) throw new Exception("Usuário não encontrado no banco de dados");
+
+                // Monta a lista de IDs para buscar os posts dos usuários seguidos
+                var idsParaBuscar = new List<string> { id };
+                if (usuario.Seguindo != null)
+                {
+                    idsParaBuscar.AddRange(usuario.Seguindo);
+                }
+
+                // Busca os posts de usuários que o usuário está seguindo, ordenados pela data de criação
+                var posts = await _postsCollection.Find(post => idsParaBuscar.Contains(post.UsuarioId))
+                                                  .SortByDescending(post => post.DataCriacao)
+                                                  .ToListAsync();
+
+                // Para cada post, busca informações adicionais, como o usuário que fez o post e os comentários
+                foreach (var post in posts)
+                {
+                    post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
+                    post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
+                }
+
+                return posts;
             }
-
-            // Busca os posts do usuário e dos seguidores
-            var posts = await _postsCollection.Find(post => idsParaBuscar.Contains(post.UsuarioId))
-                                              .SortByDescending(post => post.DataCriacao)
-                                              .ToListAsync();
-
-            // Associa usuários e comentários aos posts
-            foreach (var post in posts)
+            catch (Exception ex)
             {
-                post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
-                post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
+                throw new Exception("Erro ao buscar posts de usuários seguindo" + ex.Message);
             }
-            return posts;
         }
 
+        // Método para buscar posts de usuários que o usuário não está seguindo
         public async Task<List<PostModel>> BuscarTodosOsPostsNãoSeguindoAsync(string id)
         {
-            // Obtém os usuários que o usuário não segue
-            var usuarios = await _usuarioRepository.BuscarSugestoesParaSeguirAsync(id);
-
-            var posts = new List<PostModel>();
-
-            // Loop para buscar os posts de cada usuário
-            foreach (var usuario in usuarios)
+            try
             {
-                var postsDoUsuario = await BuscarTodosOsPostsDoUsuarioAsync(usuario.Id);
+                // Busca o usuário 
+                var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
+                if (usuarioDb == null) throw new Exception("Usuário não encontrado no banco de dados");
 
-                // Adiciona todos os posts do usuário na lista de posts
-                posts.AddRange(postsDoUsuario);
+                // Busca sugestões de usuários para seguir
+                var usuarios = await _usuarioRepository.BuscarSugestoesParaSeguirAsync(id);
+                var posts = new List<PostModel>();
+
+                // Para cada usuário sugerido, busca os posts desse usuário
+                foreach (var usuario in usuarios)
+                {
+                    var postsDoUsuario = await BuscarTodosOsPostsDoUsuarioAsync(usuario.Id);
+                    posts.AddRange(postsDoUsuario);
+                }
+
+                return posts;
             }
-
-            return posts;
+            catch (Exception ex)
+            {
+                // Em caso de erro, exibe a mensagem de erro e lança a exceção
+                throw new Exception("Erro ao buscar posts de usuários não seguindo" + ex.Message);
+            }
         }
 
+        // Método para buscar todos os posts de um usuário específico
         public async Task<List<PostModel>> BuscarTodosOsPostsDoUsuarioAsync(string usuarioId)
         {
-            var posts = await _postsCollection.Find(x => x.UsuarioId == usuarioId).SortByDescending(x => x.DataCriacao).ToListAsync();
-
-            foreach (var post in posts)
+            try
             {
-                // Buscar o usuário relacionado
-                post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
+                // Busca o usuário 
+                var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuarioId);
+                if (usuario == null) throw new Exception("Usuário não encontrado no banco de dados");
 
-                // Buscar os comentários relacionados ao post
-                post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
+                // Busca todos os posts do usuário, ordenados pela data de criação
+                var posts = await _postsCollection.Find(x => x.UsuarioId == usuarioId)
+                                                  .SortByDescending(x => x.DataCriacao)
+                                                  .ToListAsync();
+
+                // Para cada post, busca informações adicionais, como o usuário que fez o post e os comentários
+                foreach (var post in posts)
+                {
+                    post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
+                    post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
+                }
+
+                return posts;
             }
-            return posts;
+            catch (Exception ex)
+            {
+                // Em caso de erro, exibe a mensagem de erro e lança a exceção
+                throw new Exception("Erro ao buscar posts do usuário" + ex.Message);
+            }
         }
 
-        public async Task<PostModel> BuscarPostPorIdAsync(string postId)
-        {
-            var post = await _postsCollection.Find(x => x.Id == postId).FirstOrDefaultAsync();
-
-            post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
-
-            // Buscar os comentários relacionados ao post
-            post.Comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(post.Id);
-
-            return post;
-        }
-
+        // Método para adicionar um novo post
         public async Task AddPostAsync(PostModel post)
         {
-            await _postsCollection.InsertOneAsync(post);
+            try
+            {
+                // Valida se o post não é nulo
+                if (post == null) throw new ArgumentNullException(nameof(post), "O post não pode ser nulo.");
+
+                // Insere o novo post na coleção do MongoDB
+                await _postsCollection.InsertOneAsync(post);
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro, exibe a mensagem de erro e lança a exceção
+                throw new Exception("Erro ao adicionar post" + ex.Message);
+
+            }
         }
 
+        // Método para atualizar as informações de um post existente
         public async Task AtualizarPostAsync(PostModel post)
         {
-            var filter = Builders<PostModel>.Filter.Eq(x => x.Id, post.Id);
+            try
+            {
+                // Busca o usuário 
+                var postDb = await BuscarPostPorIdAsync(post.Id);
+                if (postDb == null) throw new Exception("Post não encontrado no banco de dados");
 
-            var update = Builders<PostModel>.Update
-                       .Set(x => x.Localizacao, post.Localizacao)
-                       .Set(x => x.Legenda, post.Legenda)
-                       .Set(x => x.DataAtualizacao, DateTime.Now);
+                // Cria o filtro para encontrar o post pelo ID
+                var filter = Builders<PostModel>.Filter.Eq(x => x.Id, post.Id);
+                var update = Builders<PostModel>.Update
+                           .Set(x => x.Localizacao, post.Localizacao)
+                           .Set(x => x.Legenda, post.Legenda)
+                           .Set(x => x.DataAtualizacao, DateTime.Now);
 
-            var result = await _postsCollection.UpdateOneAsync(filter, update);
+                // Atualiza o post no banco de dados
+                var result = await _postsCollection.UpdateOneAsync(filter, update);
 
-            if (result.ModifiedCount == 0) throw new Exception("Nenhum documento foi atualizado.");
+                // Verifica se nenhum documento foi atualizado
+                if (result.ModifiedCount == 0) throw new Exception("Nenhum documento foi atualizado.");
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro, exibe a mensagem de erro e lança a exceção
+                throw new Exception("Erro ao atualizar post." + ex.Message);
+            }
         }
 
-            public async Task<bool> DeletarPostAsync(string id)
+        // Método para deletar um post
+        public async Task<bool> DeletarPostAsync(string id)
+        {
+            try
             {
-                // Passo 1: Buscar o post para obter as imagens associadas
-                var post = await _postsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-                if (post == null)
-                {
-                    return false; // Se o post não existir no banco de dados, não faz sentido continuar
-                }
+                // Busca o post a ser deletado pelo ID
+                var post = await BuscarPostPorIdAsync(id);
+                if (post == null) throw new Exception("Post não encontrado no banco de dados");
 
-                // Passo 2: Criar uma lista para armazenar as imagens
+                // Prepara a lista de imagens para deletar
                 List<string> imagensParaDeletar = new List<string>();
-
                 if (post.ImagemPost != null)
                 {
-                    imagensParaDeletar.AddRange(post.ImagemPost); // Adiciona as imagens à lista
+                    imagensParaDeletar.AddRange(post.ImagemPost);
                 }
 
-                // Passo 3: Deletar os comentários relacionados ao post
+                // Deleta os comentários do post
                 await _comentarioCollection.DeleteManyAsync(x => x.PostId == id);
 
-                // Passo 4: Deletar o post do banco de dados
+                // Deleta o post do banco de dados
                 var deletarPost = await _postsCollection.DeleteOneAsync(x => x.Id == id);
                 if (deletarPost.DeletedCount > 0)
                 {
-                    // Se o post foi deletado com sucesso, deletar as imagens do servidor
-                    foreach (var imagem in imagensParaDeletar)
-                    {
-                        var imagePath = Path.Combine(_hostingEnvironment.WebRootPath, imagem);
-
-                        if (File.Exists(imagePath))
-                        {
-                            try
-                            {
-                                File.Delete(imagePath); // Tenta apagar a imagem do servidor
-                            }
-                            catch (Exception)
-                            {
-                                // Log de erro se falhar ao deletar a imagem
-                                Console.WriteLine($"Erro ao excluir a imagem: {imagem}");
-                            }
-                        }
-                    }
-
-                    return true; // Sucesso na exclusão do post e das imagens
+                    return true;
                 }
 
-                return false; // Falha na exclusão do post
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro, exibe a mensagem de erro e lança a exceção
+                throw new Exception("Erro ao deletar post:" + ex.Message);
             }
         }
+    }
 }
