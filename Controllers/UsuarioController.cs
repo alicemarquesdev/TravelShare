@@ -63,10 +63,9 @@ namespace TravelShare.Controllers
                     UsuarioPerfil = usuarioPerfil,
                     Posts = await _postRepository.BuscarTodosOsPostsDoUsuarioAsync(usuarioPerfil.Id),
                     Seguidores = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioPerfil.Seguidores),
-                    Seguindo = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioPerfil.Seguindo)
+                    Seguindo = await _usuarioRepository.BuscarVariosUsuariosPorIdAsync(usuarioPerfil.Seguindo),
+                    GoogleAPIKey = _googleAPIKey
                 };
-
-                ViewBag.GoogleApiKey = _googleAPIKey;
 
                 return View(viewModel);
             }
@@ -123,15 +122,18 @@ namespace TravelShare.Controllers
 
         // Método POST para editar o perfil
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> EditarPerfil(UsuarioSemSenhaModel usuario, IFormFile? imagem)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("Dados inválidos ao tentar editar o perfil.");
-                    return View(usuario); // Retorna para a mesma view com os erros
+                    TempData["Message"] = "Preencha os campos corretamente";
+                    return View(usuario);
                 }
+                _logger.LogInformation($"Data recebida: {usuario.DataNascimento}");
+
 
                 var usuarioDb = await _usuarioRepository.BuscarUsuarioPorIdAsync(usuario.Id);
 
@@ -151,6 +153,7 @@ namespace TravelShare.Controllers
 
                 if (usernameExistente != null && usernameExistente.Id != usuario.Id)
                 {
+
                     TempData["Message"] = "Já existe uma conta com esse username.";
                     return View(usuario);
                 }
@@ -163,7 +166,7 @@ namespace TravelShare.Controllers
                         usuario.ImagemPerfil = caminhoImagem;
 
                         // Remover imagem antiga 
-                        if(usuarioDb.ImagemPerfil != "~/image/profile-img.jpg")
+                        if (usuarioDb.ImagemPerfil != "~/image/profile-img.jpg")
                         {
                             await _caminhoImagem.RemoverImagemAntiga(usuarioDb.ImagemPerfil);
                         }
@@ -192,13 +195,23 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao editar o perfil do usuário.");
-                TempData["Message"] = "Houve um erro ao tentar atualizar o perfil.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao atualizar os dados. Tente novamente.";
+                }
+
                 return View(usuario); // Retorna a view com o modelo que contém os erros
             }
         }
+        
 
         // Método POST para deletar a conta do usuário
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> DeletarConta()
         {
             try
@@ -212,7 +225,7 @@ namespace TravelShare.Controllers
                 var usuarioDeletado = await _usuarioRepository.DeletarUsuarioAsync(usuario.Id);
 
                 // Deletar foto do perfil no servidor
-                if(usuarioDeletado)
+                if (usuarioDeletado)
                 {
                     if (usuario.ImagemPerfil != "~/image/profile-img.jpg")
                     {
@@ -228,7 +241,15 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao tentar excluir a conta do usuário.");
-                TempData["Message"] = "Ocorreu um erro ao excluir a conta.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao tentar excluir a conta. Tente novamente.";
+                }
+
                 return RedirectToAction("Perfil", new { id = _sessao.BuscarSessaoDoUsuario().Id });
             }
         }

@@ -11,6 +11,9 @@ namespace TravelShare.Repository.Interfaces
         // Retorna a notificação correspondente ao id fornecido, ou null se não encontrado
         Task<NotificacaoModel?> BuscarNotificacaoPorIdAsync(string id);
 
+        // Busca a notificacao por comentarioId
+        Task<NotificacaoModel?> BuscarNotificacaoPorComentarioId(string comentarioId);
+
         // Método assíncrono que busca todas as notificações de um usuário específico
         // 'usuarioId' é o identificador do usuário cujas notificações serão buscadas
         // Retorna uma lista de notificações associadas ao usuário

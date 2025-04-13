@@ -24,14 +24,16 @@ namespace TravelShare.Repository
         private readonly IMongoCollection<PostModel> _postCollection;
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly ISessao _sessao;
+        private readonly ILogger<UsuarioRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB e o serviço de sessão
-        public UsuarioRepository(MongoContext mongoContext, ISessao sessao)
+        public UsuarioRepository(MongoContext mongoContext, ISessao sessao, ILogger<UsuarioRepository> logger)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
             _postCollection = mongoContext.GetCollection<PostModel>("Posts");
             _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentarios");
             _sessao = sessao;
+            _logger = logger;
         }
 
         // Método que busca um usuário pelo seu ID
@@ -43,7 +45,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuario" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuario");
+                throw new Exception("Erro ao buscar usuario.");
             }
         }
 
@@ -51,16 +54,19 @@ namespace TravelShare.Repository
         public async Task<UsuarioModel?> BuscarUsuarioPorEmailOuUsernameAsync(string emailOuUsername)
         {
             try
-            {                return await _usuarioCollection
-                    .Find(x => x.Email.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase) ||
-                               x.Username.Equals(emailOuUsername, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return await _usuarioCollection
+                    .Find(x => x.Email.ToLower() == emailOuUsername.ToLower() ||
+                               x.Username.ToLower() == emailOuUsername.ToLower())
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuario" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuário");
+                throw new Exception("Erro ao buscar usuário.");
             }
         }
+
 
         // Método que pesquisa usuários por um termo de pesquisa (nome, username ou cidade)
         public async Task<List<UsuarioModel>> PesquisarUsuariosAsync(string termo)
@@ -77,7 +83,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuarios");
+                throw new Exception("Erro ao buscar usuarios.");
             }
         }
 
@@ -90,7 +97,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuarios");
+                throw new Exception("Erro ao buscar usuarios.");
             }
         }
 
@@ -103,7 +111,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuarios");
+                throw new Exception("Erro ao buscar usuarios.");
             }
         }
 
@@ -125,7 +134,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar usuarios" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar usuarios");
+                throw new Exception("Erro ao buscar usuarios.");
             }
         }
 
@@ -138,11 +148,14 @@ namespace TravelShare.Repository
                 usuario.Email = usuario.Email.ToLower().Trim();
                 usuario.Username = usuario.Username.ToLower().Trim();
                 usuario.SetSenhaHash();
+                usuario.CidadesVisitadas.Add(usuario.CidadeDeNascimento);
+
                 await _usuarioCollection.InsertOneAsync(usuario);
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao adicionar usuario" + ex.Message);
+                _logger.LogError(ex, "Erro ao adicionar usuario");
+                throw new Exception("Erro ao adicionar usuario.");
             }
         }
 
@@ -169,8 +182,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao atualizar usuario" + ex.Message);
-
+                _logger.LogError(ex, "Erro ao atualizar usuario");
+                throw new Exception("Erro ao atualizar usuario.");
             }
         }
 
@@ -193,8 +206,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao deletar usuario" + ex.Message);
-
+                _logger.LogError(ex, "Erro ao deletar usuario");
+                throw new Exception("Erro ao deletar usuario.");
             }
         }
     }

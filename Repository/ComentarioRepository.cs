@@ -16,11 +16,13 @@ namespace TravelShare.Repository
     {
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILogger<ComentarioRepository> _logger;
 
-        public ComentarioRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
+        public ComentarioRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository, ILogger<ComentarioRepository> logger)
         {
             _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentarios");
             _usuarioRepository = usuarioRepository;
+            _logger = logger;
         }
 
         // Busca um comentário pelo seu ID.
@@ -28,20 +30,12 @@ namespace TravelShare.Repository
         {
             try
             {
-                var comentario = await _comentarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
-                // Se o comentário não for encontrado, lança uma exceção informando que o comentário está nulo.
-                if (comentario == null)
-                {
-                    throw new NullReferenceException("A referência do comentário está nula.");
-                }
-
-                return comentario;
+                return await _comentarioCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                // Trata qualquer erro que possa ocorrer durante a busca e lança a exceção.
-                throw new Exception($"Erro ao buscar comentário com ID {id}: {ex.Message}", ex);
+                _logger.LogError(ex, "Erro ao buscar comentário.");
+                throw new Exception("Erro ao buscar comentário.");
             }
         }
 
@@ -51,8 +45,8 @@ namespace TravelShare.Repository
             try
             {
                 var comentarios = await _comentarioCollection.Find(x => x.PostId == postId).ToListAsync();
-                
-                if(comentarios == null)
+
+                if (comentarios == null)
                 {
                     throw new NullReferenceException("Comentarios não encontrados no banco de dados, retornou null.");
                 }
@@ -84,7 +78,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Trata qualquer erro que possa ocorrer durante a busca e lança a exceção.
-                throw new Exception($"Erro ao buscar comentários do post com ID {postId}: {ex.Message}", ex);
+                _logger.LogError(ex, "Erro ao buscar comentários do post.");
+                throw new Exception("Erro ao buscar comentários do post.");
             }
         }
 
@@ -104,7 +99,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Trata qualquer erro que possa ocorrer durante a inserção e lança a exceção.
-                throw new Exception($"Erro ao adicionar comentário: {ex.Message}", ex);
+                _logger.LogError(ex, "Erro ao adicionar comentário.");
+                throw new Exception("Erro ao adicionar comentário.");
             }
         }
 
@@ -130,7 +126,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Trata qualquer erro que possa ocorrer durante a exclusão e lança a exceção.
-                throw new Exception($"Erro ao deletar comentário com ID {id}: {ex.Message}", ex);
+                _logger.LogError(ex, "Erro ao deletar comentário.");
+                throw new Exception("Erro ao deletar comentário");
             }
         }
     }

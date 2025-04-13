@@ -24,6 +24,9 @@
 
 <body class="bg-white">
 
+    <!-- Token CSRF disponível para todas as views que utilizam esse layout -->
+    @Html.AntiForgeryToken()
+
     <!-- Navegação fixa no topo -->
     <nav class="navbar bg-dark fixed-top mb-lg-5" style="height: 60px; padding: 0 20px;">
         <h3 class="text-white text-start py-3 ms-5">TravelShare</h3>
@@ -32,18 +35,15 @@
     <!-- Layout de autenticação -->
     <div id="layoutAuthentication">
         <div id="layoutAuthentication_content">
-            <main class="mt-5">
-                <div class="container mt-5 pt-2">
-                    <!-- Exibição de mensagens temporárias -->
-                    @if (TempData["Message"] != null)
-                    {
-                        <div class="alert alert-dark mt-3" role="alert">
-                            <button type="button" class="btn btn-dark btn-sm close-alert rounded-5" data-bs-dismiss="alert" aria-label="Close">X</button>
-                            @TempData["Message"]
-                        </div>
-                    }
-                </div>
-
+            <main class="mt-5 pt-2">
+                <!-- Exibição de mensagens temporárias -->
+                @if (TempData["Message"] != null)
+                {
+                    <div class="container alert alert-dark alert-dismissible fade show d-flex align-items-center" role="alert">
+                        @TempData["Message"]
+                        <button type="button" class="btn-close btn-close-dark close-alert ms-auto p-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
                 <!-- Corpo principal da página -->
                 @RenderBody()
             </main>

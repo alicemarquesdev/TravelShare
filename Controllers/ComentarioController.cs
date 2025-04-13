@@ -23,9 +23,9 @@ namespace TravelShare.Controllers
 
         // Construtor que recebe as dependências necessárias para o controlador.
         // Caso alguma dependência seja nula, será lançado um throw para evitar erros durante a execução.
-        public ComentarioController(IComentarioRepository comentarioRepository, 
-                                    ISessao sessao, 
-                                    IPostRepository postRepository, 
+        public ComentarioController(IComentarioRepository comentarioRepository,
+                                    ISessao sessao,
+                                    IPostRepository postRepository,
                                     INotificacaoRepository notificacaoRepository,
                                     ILogger<ComentarioController> logger)
         {
@@ -36,12 +36,11 @@ namespace TravelShare.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger), "O logger não pode ser nulo.");
         }
 
-        // Classe para mapear os dados do comentário na requisição
         public class ComentarioRequest
         {
-            public required string Id { get; set; }  // ID do comentário
-            public required string PostId { get; set; }  // ID do post ao qual o comentário será associado
-            public required string Comentario { get; set; }  // Texto do comentário
+            public string Id { get; set; }
+            public string PostId { get; set; }
+            public string Comentario { get; set; }
         }
 
         // Método para renderizar os comentários em formato HTML para o frontend
@@ -54,6 +53,7 @@ namespace TravelShare.Controllers
             }
             return sb.ToString();
         }
+
 
         // Método responsável por adicionar um comentário a um post.
         // Verifica se o post existe e se o comentário é válido.
@@ -118,8 +118,9 @@ namespace TravelShare.Controllers
 
                     // Retorna os comentários renderizados em HTML
                     var comentarios = await _comentarioRepository.BuscarTodosOsComentariosDoPostAsync(request.PostId);
-                    var comentariosHTML = RenderizarComentariosHTML(comentarios);  // Gera o HTML dos comentários
+                    var comentariosHTML = RenderizarComentariosHTML(comentarios); // Método para gerar o HTML dos comentários
                     return Json(new { success = true, comentariosHTML = comentariosHTML });
+
                 }
                 else
                 {
@@ -133,8 +134,8 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 // Loga o erro e retorna uma mensagem amigável
-                 _logger.LogError(ex, "Erro ao adicionar comentário.");
-                return Json(new { success = false, message = "Ocorreu um erro ao adicionar o comentário. Tente novamente mais tarde." });
+                _logger.LogError(ex, "Erro ao adicionar comentário.");
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -147,13 +148,22 @@ namespace TravelShare.Controllers
                 // Verifica se o ID do comentário está presente
                 if (!String.IsNullOrEmpty(request.Id))
                 {
+                    var comentarioId = request.Id;
                     // Deleta o comentário no repositório
                     bool sucesso = await _comentarioRepository.DeletarComentarioAsync(request.Id);
 
                     // Caso o comentário seja deletado com sucesso, também remove a notificação
                     if (sucesso)
                     {
-                        await _notificacaoRepository.RemoverNotificacaoPorComentarioAsync(request.Id);
+                        // Primeiro, tenta encontrar a notificação associada ao comentário
+                        var notificacao = await _notificacaoRepository.BuscarNotificacaoPorComentarioId(comentarioId);
+
+                        // Se a notificação existir, remove-a
+                        if (notificacao != null)
+                        {
+                            await _notificacaoRepository.RemoverNotificacaoPorComentarioAsync(comentarioId);
+                        }
+
                         return Json(new { success = true });
                     }
                 }

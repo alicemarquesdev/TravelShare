@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using TravelShare.Filters;
+using TravelShare.Helper;
 using TravelShare.Helper.Interfaces;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
@@ -19,6 +21,7 @@ namespace TravelShare.Controllers
     [PaginaParaUsuarioDeslogado] // - Acesso apenas para usuários deslogados  
     public class LoginController : Controller
     {
+        public readonly string _googleAPIKey;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly ISessao _sessao;
         private readonly IEmail _email;
@@ -26,13 +29,14 @@ namespace TravelShare.Controllers
         private readonly ILogger<LoginController> _logger;
 
         // Construtor que injeta as dependências e verifica se nenhuma delas é nula
-        public LoginController(
+        public LoginController(IOptions<GoogleAPISettings> googleAPISettings,
             IUsuarioRepository usuarioRepository,
             ISessao sessao,
             IEmail email,
             IAlteracaoSenhaRepository alterarSenhaRepository,
             ILogger<LoginController> logger)
         {
+            _googleAPIKey = googleAPISettings.Value.ApiKey ?? throw new ArgumentNullException("A chave da API do Google não foi configurada corretamente.");
             _usuarioRepository = usuarioRepository ?? throw new ArgumentNullException(nameof(usuarioRepository));
             _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao));
             _email = email ?? throw new ArgumentNullException(nameof(email));
@@ -47,7 +51,11 @@ namespace TravelShare.Controllers
         public IActionResult Login() => View();
 
         // Exibe a página de criação de conta
-        public IActionResult CriarConta() => View();
+        public IActionResult CriarConta()
+        {
+            ViewBag.GoogleApiKey = _googleAPIKey; // Passa a chave da API do Google para a view
+            return View();
+        }
 
         // Exibe a página de redefinição de senha
         public IActionResult RedefinirSenha() => View();
@@ -61,12 +69,13 @@ namespace TravelShare.Controllers
 
         // Metodo usado para criar conta do usuário.
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> CriarConta(UsuarioModel usuario)
         {
             // Verifica se os dados fornecidos são válidos
             if (!ModelState.IsValid)
             {
-                TempData["Message"] = "Tente novamente, houve um erro ao criar sua conta.";
+                TempData["Message"] = "Preencha todos os campos corretamente.";
                 return View(usuario);
             }
 
@@ -83,7 +92,7 @@ namespace TravelShare.Controllers
                 }
                 if (usernameExistente != null)
                 {
-                    TempData["Message"] = "Já existe uma conta com esse username.";
+                    TempData["Message"] = "Já existe uma conta com esse usernma.";
                     return View(usuario);
                 }
 
@@ -95,62 +104,70 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar conta.");
-                TempData["Message"] = "Erro interno ao criar conta. Tente novamente mais tarde.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Erro ao criar conta. Tente novamente mais tarde.";
+                }
+
                 return View(usuario);
             }
         }
 
         // Método necessário para efetuar Login.
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Entrar(LoginModel loginmodel)
         {
             // Verifica se os dados enviados são válidos
             if (!ModelState.IsValid)
             {
-                TempData["Message"] = "Os dados não são válidos, tente novamente.";
-                return View("Login");
+                TempData["Message"] = "Preencha todos os campos corretamente.";
+                return View("Login", loginmodel);
             }
 
             try
             {
-                // Busca o usuário no banco pelo email ou username fornecido
                 var usuario = await _usuarioRepository.BuscarUsuarioPorEmailOuUsernameAsync(loginmodel.EmailOuUsername);
 
                 if (usuario != null)
                 {
-                    // Valida a senha do usuário
                     if (usuario.SenhaValida(loginmodel.Senha))
                     {
-                        _sessao.CriarSessaoDoUsuario(usuario); // Cria a sessão do usuário logado
+                        _sessao.CriarSessaoDoUsuario(usuario);
+                        _logger.LogInformation($"Usuário {usuario.Username} logado com sucesso.");
                         return RedirectToAction("Index", "Home");
                     }
 
                     TempData["Message"] = "Senha inválida, tente novamente.";
-                }
-                else
-                {
-                    TempData["Message"] = "Usuário não encontrado, tente novamente.";
+                    return View("Login", loginmodel);
                 }
 
-                return View("Login");
+                TempData["Message"] = "Email ou username inválidos.";
+                return View("Login", loginmodel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao tentar realizar login.");
-                TempData["Message"] = "Erro interno ao realizar login. Tente novamente mais tarde.";
-                return View("Login");
+                TempData["Message"] = "Erro ao realizar login. Tente novamente mais tarde.";
+                return View("Login", loginmodel);
             }
         }
 
+
         // Metodo usado para redefinir a senha, email com nova senha é enviado ao email do usuario.
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> EnviarLinkParaRedefinirSenha(RedefinirSenhaModel redefinirSenhaModel)
         {
             // Verifica se os dados enviados são válidos
             if (!ModelState.IsValid)
             {
-                TempData["Message"] = "Os dados não são válidos, tente novamente.";
-                return View("RedefinirSenha");
+                TempData["Message"] = "Preencha o campo corretamente.";
+                return View(redefinirSenhaModel);
             }
 
             try
@@ -161,7 +178,7 @@ namespace TravelShare.Controllers
                 if (usuarioDb == null)
                 {
                     TempData["Message"] = "Email inválido, tente novamente.";
-                    return View("RedefinirSenha");
+                    return View(redefinirSenhaModel);
                 }
 
                 // Gera uma nova senha temporária para o usuário
@@ -183,16 +200,23 @@ namespace TravelShare.Controllers
                     }
 
                     TempData["Message"] = "Não conseguimos redefinir sua senha. Por favor, tente novamente.";
-                    return View("RedefinirSenha");
+                    return View(redefinirSenhaModel);
                 }
-
                 TempData["Message"] = "Não conseguimos enviar o e-mail. Tente novamente mais tarde.";
-                return View("RedefinirSenha");
+                return View(redefinirSenhaModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao tentar redefinir senha.");
-                TempData["Message"] = "Erro interno ao redefinir senha. Tente novamente mais tarde.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Erro ao redefinir senha. Tente novamente mais tarde.";
+                }
+
                 return View("RedefinirSenha");
             }
         }

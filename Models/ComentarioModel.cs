@@ -15,6 +15,7 @@ namespace TravelShare.Models
         // Conteúdo do comentário (campo obrigatório, máximo 100 caracteres)
         [BsonElement("Comentario")]
         [Required(ErrorMessage = "Comentário vazio.")]
+        [RegularExpression(@"^[A-Za-zÀ-ÿ0-9.,!?()'""\s-]+$", ErrorMessage = "Contém caracteres inválidos")]
         [StringLength(100, ErrorMessage = "O comentário deve ter no máximo 100 caracteres.")]
         public required string Comentario { get; set; }
 

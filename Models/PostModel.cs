@@ -14,6 +14,7 @@ namespace TravelShare.Models
 
         // Texto da legenda do post, limitado a 250 caracteres
         [BsonElement("Legenda")]
+        [RegularExpression(@"^[A-Za-zÀ-ÿ0-9.,!?()'""\s-]+$", ErrorMessage = "Contém caracteres inválidos")]
         [StringLength(250, ErrorMessage = "A legenda deve ter no máximo 250 caracteres.")]
         public string? Legenda { get; set; }
 
@@ -21,10 +22,10 @@ namespace TravelShare.Models
         [BsonElement("Localizacao")]
         public string? Localizacao { get; set; }
 
-        // Lista de URLs das imagens associadas ao post (obrigatório)
+        // Lista de URLs das imagens associadas ao post
         [BsonElement("ImagemPost")]
         [Required(ErrorMessage = "Insira uma imagem.")]
-        public required List<string> ImagemPost { get; set; }
+        public List<string> ImagemPost { get; set; } = new List<string>();
 
         // Data de criação do post, armazenada em UTC
         [BsonElement("DataCriacao")]

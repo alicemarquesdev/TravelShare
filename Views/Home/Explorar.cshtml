@@ -1,9 +1,4 @@
-﻿@model List<PostModel>
-
-@{
-    // Captura o ID do primeiro usuário logado. Caso o modelo esteja vazio ou nulo, 'UsuarioLogado' será nulo.
-    var UsuarioLogado = Model?.FirstOrDefault()?.Id;
-}
+﻿@model HomeViewModel
 
 <div class="container py-4">
     <!-- Título principal da página -->
@@ -12,12 +7,10 @@
     <div class="d-flex justify-content-center align-items-center">
         <div class="form-group position-relative w-75">
             <!-- Campo de Pesquisa para buscar usuários -->
-            <input type="text"
-                   id="pesquisaInput"  <!-- Identificador único para referenciar o campo no JS -->
-            class="form-control w-100"
-            placeholder="Digite o nome ou username para pesquisar..."  <!-- Texto placeholder do campo -->
-            onkeyup="buscarUsuarios()"  <!-- Chama função JS para buscar ao digitar -->
-            style="border: 1px solid #ccc; border-radius: 0.25rem; padding: 0.5rem; font-size: 1rem;" />
+            <input type="text" id="pesquisaInput" class="form-control w-100"
+                   placeholder="Digite o nome ou username para pesquisar..."
+                   onkeyup="buscarUsuarios()"
+                   style="border: 1px solid #ccc; border-radius: 0.25rem; padding: 0.5rem; font-size: 1rem;" />
 
             <!-- Lista de Sugestões que aparece quando o usuário digita no campo de pesquisa -->
             <ul id="suggestions"
@@ -29,10 +22,10 @@
     </div>
 
     <!-- Grid de posts (cards) -->
-    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 mt-3">
-        @if (Model != null && Model.Any())
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-3 justify-content-center">
+        @if (Model.Posts != null && Model.Posts.Any())
         {
-            foreach (var post in Model)
+            foreach (var post in Model.Posts)
             {
                 <div class="col">
                     <div class="card shadow-sm border-0">
@@ -51,7 +44,7 @@
                                     <img src="@Url.Content(post.Usuario.ImagemPerfil)" class="rounded-circle" alt="Foto do Perfil" style="width: 50px; height: 50px; object-fit: cover;">
                                     <div class="ms-3">
                                         <p class="mb-0"><strong>@post.Usuario.Nome</strong></p>
-                                        <p class="mb-0 text-muted">@post.Usuario.Username</p>
+                                        <p class="mb-0 text-muted">@@@post.Usuario.Username</p>
                                         <p class="mb-0 text-muted">@post.Usuario.CidadeDeNascimento </p>
                                     </div>
                                 </div>
@@ -77,14 +70,17 @@
                                                     </div>
                                                 }
                                             </div>
-                                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
-                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                <span class="visually-hidden">Anterior</span>
-                                            </button>
-                                            <button class="carousel-control-next" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="next">
-                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                <span class="visually-hidden">Próximo</span>
-                                            </button>
+                                            @if (post.ImagemPost.Count > 1)
+                                            {
+                                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
+                                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                    <span class="visually-hidden">Anterior</span>
+                                                </button>
+                                                <button class="carousel-control-next" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="next">
+                                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                    <span class="visually-hidden">Próximo</span>
+                                                </button>
+                                            }
                                         </div>
                                     </div>
 
@@ -93,10 +89,12 @@
                                         <!-- Header do Post com informações do usuário -->
                                         <a class="text-decoration-none" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@post.UsuarioId">
                                             <div class="d-flex align-items-center border-bottom p-3">
-                                                <img src="@Url.Content(post.Usuario.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                                                <h5 class="ms-3 mb-0 fw-bold">@post.Usuario.Nome</h5>
-                                                <p class="mb-1">@post.Localizacao</p>
-                                                <p class="mb-0 text-muted ms-auto">@post.DataCriacao.CalcularTempoDecorrido()</p>
+                                                <img src="@Url.Content(post.Usuario.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                                <div class="ms-3 d-flex flex-column gap-0 text-dark">
+                                                    <h5 class="fw-bold m-0">@post.Usuario.Nome</h5>
+                                                    <p class="m-0">@post.Localizacao</p>
+                                                    <small>@post.DataCriacao.CalcularTempoDecorrido()</small>
+                                                </div>
                                             </div>
                                         </a>
 
@@ -109,23 +107,24 @@
 
                                             <!-- Lista de Comentários -->
                                             <div class="comentariosLista mt-3" data-post-id="@post.Id" style="max-height: 320px; overflow-y: auto; word-wrap: break-word;">
-                                                @if (post.Comentarios.Any())
+                                                @if (post.Comentarios != null && post.Comentarios.Any())
                                                 {
                                                     foreach (var comentario in post.Comentarios)
                                                     {
-                                                        <div id="comentario-@comentario.Id" class="mb-2" style="position: relative;">
+                                                        <div id="comentario-@comentario.Id" class="mb-2 d-flex align-items-center" style="position: relative;">
                                                             <p class="mb-0 ps-2" style="white-space: pre-wrap;"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
+                                                            <div class="ms-auto">
 
-                                                            @if (UsuarioLogado == post.UsuarioId || comentario.UsuarioId == UsuarioLogado)
-                                                            {
-                                                                <!-- Formulário de Deletar Comentário (visível somente para o usuário logado ou dono do post) -->
-                                                                <form class="deleteComentarioForm" method="post" style="position: absolute; top: 0; right: 0;">
-                                                                    <input type="hidden" name="id" value="@comentario.Id" />
-                                                                    <button type="submit" class="border-0 bg-transparent">
-                                                                        <i class="bi bi-trash text-secondary"></i>
-                                                                    </button>
-                                                                </form>
-                                                            }
+                                                                @if (Model.UsuarioLogado.Id == post.UsuarioId || comentario.UsuarioId == Model.UsuarioLogado.Id)
+                                                                {
+                                                                    <form class="deleteComentarioForm" method="post">
+                                                                        <input type="hidden" name="id" value="@comentario.Id" />
+                                                                        <button type="submit" class="border-0 bg-transparent">
+                                                                            <i class="bi bi-trash text-secondary"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                }
+                                                            </div>
                                                         </div>
                                                     }
                                                 }
@@ -139,9 +138,9 @@
                                                 <form class="d-inline">
                                                     <input type="hidden" name="postId" value="@post.Id" />
                                                     <button type="button"
-                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(UsuarioLogado) ? "text-danger" : "text-secondary")"
+                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogado.Id) ? "text-danger" : "text-secondary")"
                                                             data-post-id="@post.Id">
-                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(UsuarioLogado) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogado.Id) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
                                                     </button>
                                                 </form>
 
@@ -171,7 +170,7 @@
         else
         {
             <!-- Exibe mensagem caso não haja posts -->
-            <p class="text-secondary">Nenhum post encontrado.</p>
+            <p class="text-secondary text-center">Nenhum post encontrado.</p>
         }
     </div>
 </div>

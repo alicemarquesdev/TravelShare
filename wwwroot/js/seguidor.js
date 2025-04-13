@@ -6,6 +6,7 @@ document.querySelectorAll('.seguirOuDeseguirForm').forEach(form => {
 
         const seguindoId = form.dataset.seguindoId; // Pega o ID do usuário que está sendo seguido
         const usuarioId = form.dataset.usuarioId;   // Pega o ID do usuário que está realizando a ação
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
         // Enviar os dados via fetch (AJAX)
         try {
@@ -43,9 +44,36 @@ document.querySelectorAll('.seguirOuDeseguirForm').forEach(form => {
     });
 });
 
+async function removerSeguidor(button) {
+    const seguidorId = button.getAttribute('data-seguidor-id');
 
-// Função para remover um seguidor
-document.querySelectorAll('.removerSeguidorBtn').forEach(button => {
-    // Escuta o clique no botão de remover seguidor
-    button.addEventListener('click', function () {
-        var seguidorId = this.getAttribute('data-seguidor-id');  // Pega o ID do segu
+    // Certificar-se de que o ID do seguidor está presente
+    if (!seguidorId) {
+        alert("ID do seguidor não encontrado!");
+        return;
+    }
+
+    try {
+        // Fazer a requisição usando fetch
+        const response = await fetch('/SeuController/RemoverSeguidor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() // Adicionando o token de segurança
+            },
+            body: JSON.stringify({ seguidorId: seguidorId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Se o seguidor for removido com sucesso, ocultar o botão
+            button.style.display = 'none'; // Ocultar o botão
+        } else {
+            alert(data.message || "Erro ao remover seguidor.");
+        }
+    } catch (error) {
+        console.error("Erro ao remover seguidor:", error);
+        alert("Ocorreu um erro ao remover o seguidor.");
+    }
+}

@@ -85,20 +85,24 @@
     box-sizing: border-box;
 }
 
+/* TOP BAR E SIDE BAR - AO REDIMENSIONAR PARA TELAS PEQUENAS */
+@media (max-width: 992px) {
+    #sideNav {
+        display: none;
+    }
+
+    #topNav {
+        width: 100%;
+    }
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
     :root {
         scroll-behavior: smooth;
     }
 }
 
-.close-alert {
-    position: absolute;
-    right: -10px;
-    top: -15px;
-    border-radius: 15px;
-    width: 30px;
-    height: 31px;
-}
 
 body {
     margin: 0;

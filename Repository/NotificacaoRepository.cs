@@ -9,6 +9,7 @@ namespace TravelShare.Repository
     // Classe responsável pela manipulação das notificações no sistema.
     // Métodos disponíveis:
     // - BuscarNotificacaoPorIdAsync(string id): Busca uma notificação pelo seu ID.
+    // - BuscarNotificacaoPorComentarioId(string comentarioId): Busca uma notificação pelo ID do comentário.
     // - BuscarTodasAsNotificacoesDoUsuarioAsync(string usuarioId): Busca todas as notificações de um usuário.
     // - AddNotificacaoAsync(NotificacaoModel notificacao): Adiciona uma nova notificação ao sistema.
     // - RemoverNotificacaoAsync(string usuarioDestino, string usuarioOrigem, NotificacaoEnum notificacao, string? postId): Remove uma notificação com base nos parâmetros fornecidos.
@@ -19,13 +20,15 @@ namespace TravelShare.Repository
         private readonly IMongoCollection<NotificacaoModel> _notificacaoCollection;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPostRepository _postRepository;
+        private readonly ILogger<NotificacaoRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB, repositórios de usuários e posts.
-        public NotificacaoRepository(MongoContext context, IUsuarioRepository usuarioRepository, IPostRepository postRepository)
+        public NotificacaoRepository(MongoContext context, IUsuarioRepository usuarioRepository, IPostRepository postRepository, ILogger<NotificacaoRepository> logger)
         {
             _notificacaoCollection = context.GetCollection<NotificacaoModel>("Notificacoes");
             _usuarioRepository = usuarioRepository;
             _postRepository = postRepository;
+            _logger = logger;
         }
 
         // Busca uma notificação pelo ID.
@@ -39,7 +42,23 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar notificação por ID." + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar notificação por ID.");
+                throw new Exception("Erro ao buscar notificação por ID.");
+            }
+        }
+
+        // Busca uma notificação pelo comentarioId
+        public async Task<NotificacaoModel?> BuscarNotificacaoPorComentarioId(string comentarioId)
+        {
+            try
+            {
+               return await _notificacaoCollection.Find(x => x.ComentarioId == comentarioId).FirstOrDefaultAsync();
+                
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar notificação por ID.");
+                throw new Exception("Erro ao buscar notificação por ID.");
             }
         }
 
@@ -68,7 +87,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar notificações do usuario." + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar notificações do usuário.");
+                throw new Exception("Erro ao buscar notificações do usuario.");
             }
         }
 
@@ -86,7 +106,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao adicionar notificação:" + ex.Message);
+                _logger.LogError(ex, "Erro ao adicionar notificação.");
+                throw new Exception("Erro ao adicionar notificação.");
             }
         }
 
@@ -127,7 +148,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao remover notificação:" + ex.Message);
+                _logger.LogError(ex, "Erro ao remover notificação.");
+                throw new Exception("Erro ao remover notificação");
             }
         }
 
@@ -147,7 +169,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao remover notificação por comentário:" + ex.Message);
+                _logger.LogError(ex, "Erro ao remover notificação por comentário.");
+                throw new Exception("Erro ao remover notificação por comentário.");
             }
         }
     }

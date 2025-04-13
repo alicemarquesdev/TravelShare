@@ -51,7 +51,7 @@
                             </div>
                             <!-- Campo para a data de nascimento do usuário -->
                             <div class="col-md-6 form-floating mb-3">
-                                <input type="date" class="form-control" asp-for="DataNascimento" min="1920-01-01" max="2010-01-01" required>
+                                <input type="date" class="form-control" asp-for="DataNascimento" min="1920-01-01" max="2007-01-01" title="Selecione uma data entre 01/01/1920 e 01/01/2007"  required>
                                 <label for="DataNascimento" class="ms-2">Data de Nascimento</label>
                                 <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
                             </div>
@@ -103,9 +103,12 @@
                         <div id="cidade-@cidade" class="cidade-item d-flex align-items-center">
                             <p class="me-2">@cidade</p>
                             <!-- Botão para remover cidade da lista -->
-                            <button type="submit" class="border-0 bg-transparent ms-auto removerCidade" data-cidade="@cidade">
-                                <i class="bi bi-trash text-dark"></i>
-                            </button>
+                            @if (cidade != Model.CidadeDeNascimento)
+                            {
+                                <button type="submit" class="border-0 bg-transparent ms-auto removerCidade" data-cidade="@cidade">
+                                    <i class="bi bi-trash text-dark"></i>
+                                </button>
+                            }
                         </div>
                     }
                 }
@@ -176,4 +179,5 @@
     </script>
     <script src="~/js/googleApi.js"></script>
     <script src="~/js/cidades-visitadas.js"></script>
+    <script src="~/js/editar-perfil.js"></script>
 }

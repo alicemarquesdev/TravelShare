@@ -12,6 +12,7 @@ namespace TravelShare.Controllers
     // 2. Explorar: Retorna posts de usuários que o usuário logado ainda não segue.
     // 3. Notificacoes: Retorna todas as notificações do usuário logado.
     // 4. PesquisarUsuarios: Busca usuários pelo nome ou username e retorna um JSON com as informações básicas.
+    // 5. Error: Exibe a página de erro.
     [PaginaParaUsuarioLogado] // - Acesso apenas para usuários logados
     public class HomeController : Controller
     {
@@ -42,7 +43,7 @@ namespace TravelShare.Controllers
                 if (usuario == null)
                 {
                     _logger.LogWarning("Usuário não encontrado na sessão.");
-                    return RedirectToAction("Login", "Conta");
+                    return RedirectToAction("Login", "Login");
                 }
 
                 var viewModel = new HomeViewModel
@@ -57,21 +58,37 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao carregar a página inicial.");
-                return StatusCode(500, "Erro interno do servidor");
+                return RedirectToAction("CriarConta", "Login");
             }
+        }
+
+        // Exibe a página de erro
+        public IActionResult Error()
+        {
+            return View();
         }
 
         // Retorna a página "Explorar" com posts de usuários que o usuário logado ainda não segue.
         // Se o ID do usuário for nulo ou vazio, uma exceção será lançada.
-        public async Task<IActionResult> Explorar(string id)
+        public async Task<IActionResult> Explorar()
         {
             try
             {
-                if (string.IsNullOrEmpty(id)) throw new ArgumentNullException("id é nulo");
+                var usuario = _sessao.BuscarSessaoDoUsuario();
 
-                var posts = await _postRepository.BuscarTodosOsPostsNãoSeguindoAsync(id);
+                if(usuario == null)
+                {
+                    _logger.LogWarning("Usuário não encontrado na sessão.");
+                    return RedirectToAction("Login", "Login");
+                }
 
-                return View(posts);
+                var viewModel = new HomeViewModel
+                {
+                    UsuarioLogado = usuario,
+                    Posts = await _postRepository.BuscarTodosOsPostsNãoSeguindoAsync(usuario.Id)
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {

@@ -15,12 +15,14 @@ namespace TravelShare.Repository
     {
         private readonly IMongoCollection<PostModel> _postsCollection;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILogger<CurtidaRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB e inicializa a coleção de posts.
-        public CurtidaRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
+        public CurtidaRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository, ILogger<CurtidaRepository> logger)
         {
             _postsCollection = mongoContext.GetCollection<PostModel>("Posts");
             _usuarioRepository = usuarioRepository;
+            _logger = logger;
         }
 
         // Verifica se um usuário já curtiu o post.
@@ -33,7 +35,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao verificar curtida:" + ex.Message);
+                _logger.LogError(ex, "Erro ao verificar curtida.");
+                throw new Exception("Erro ao verificar curtida.");
             }
         }
 
@@ -63,7 +66,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao adicionar curtida:" + ex.Message);
+                _logger.LogError(ex, "Erro ao adicionar curtida.");
+                throw new Exception("Erro ao adicionar curtida.");
             }
         }
 
@@ -87,7 +91,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao remover curtida:" + ex.Message);
+                _logger.LogError(ex, "Erro ao remover curtida.");
+                throw new Exception("Erro ao remover curtida.");
             }
         }
     }

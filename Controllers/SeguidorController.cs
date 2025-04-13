@@ -18,12 +18,14 @@ namespace TravelShare.Controllers
         private readonly ISeguidorRepository _seguidorRepository;
         private readonly INotificacaoRepository _notificacaoRepository;
         private readonly ISessao _sessao;
+        private readonly ILogger<SeguidorController> _logger;
 
-        public SeguidorController(ISeguidorRepository seguidorRepository, ISessao sessao, INotificacaoRepository notificacaoRepository)
+        public SeguidorController(ISeguidorRepository seguidorRepository, ISessao sessao, INotificacaoRepository notificacaoRepository, ILogger<SeguidorController> logger)
         {
             _seguidorRepository = seguidorRepository ?? throw new ArgumentNullException(nameof(seguidorRepository));
             _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao));
             _notificacaoRepository = notificacaoRepository ?? throw new ArgumentNullException(nameof(notificacaoRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger não pode ser nulo.");
         }
 
         // Classe interna para a requisição de seguir ou deixar de seguir um usuário
@@ -42,7 +44,7 @@ namespace TravelShare.Controllers
                 // Validação dos parâmetros da requisição
                 if (string.IsNullOrEmpty(request.SeguindoId) || string.IsNullOrEmpty(request.UsuarioId))
                 {
-                    return Json(new { success = false, message = "Informações inválidas." });
+                    throw new Exception ("Informações inválidas.");
                 }
 
                 var usuario = _sessao.BuscarSessaoDoUsuario();
@@ -80,8 +82,13 @@ namespace TravelShare.Controllers
             }
             catch (Exception ex)
             {
-                // Captura qualquer erro e retorna uma mensagem de falha
-                return Json(new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Erro ao seguir/deseguir.");
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    return Json(new { success = false, message = ex.Message });  // Exibe a mensagem amigável
+                }
+
+                return Json(new { success = false, message = "Ocorreu um erro. Tente novamente." });
             }
         }
 
@@ -94,7 +101,7 @@ namespace TravelShare.Controllers
                 // Validação para garantir que o ID do seguidor foi fornecido
                 if (string.IsNullOrEmpty(seguidorId))
                 {
-                    return Json(new { success = false, message = "seguidorId é nulo" });
+                    throw new Exception ("seguidorId é nulo");
                 }
 
                 var usuario = _sessao.BuscarSessaoDoUsuario();
@@ -105,17 +112,24 @@ namespace TravelShare.Controllers
                 if (seguidor == null)
                 {
 
-                    return Json(new { success = false, message = "Seguidor não encontrado." });
-                    
+                    throw new Exception("Seguidor não encontrado.");
+
                 }
 
                 await _seguidorRepository.RemoverSeguidorAsync(usuario.Id, seguidorId);
 
                 return Json(new { success = true });
 
-                           }
-            catch (Exception)
+            }
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Erro ao remover seguidor.");
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    return Json(new { success = false, message = ex.Message });
+
+                }
+
                 return Json(new { success = false, message = "Ocorreu um erro ao remover o seguidor. Tente novamente mais tarde." });
             }
         }

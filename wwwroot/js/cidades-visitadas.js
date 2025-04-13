@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const adicionarCidadeBtn = document.getElementById("adicionarCidadeBtn"); // Botão para adicionar cidade
     const cidadesLista = document.getElementById("cidadesLista"); // Lista de cidades já adicionadas
     const contadorCidades = document.getElementById("contadorCidades"); // Elemento para exibir o número total de cidades
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
     // Evento para adicionar uma cidade ao clicar no botão
     adicionarCidadeBtn.addEventListener("click", async function () {

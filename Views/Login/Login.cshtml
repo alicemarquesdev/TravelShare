@@ -12,12 +12,12 @@
 
                 <div class="card-body">
                     <!-- Formulário de login -->
-                    <form asp-controller="Login" asp-action="Entrar" method="post">
+                    <form asp-controller="Login" asp-action="Entrar" method="post" asp-antiforgery="true">
                         <!-- Formulário que envia a requisição POST para a action "Entrar" do controller "Login" -->
 
                         <div class="form-floating mb-3">
                             <!-- Campo de input para o Email ou Username -->
-                            <input class="form-control" asp-for="EmailOuUsername" type="text" />
+                            <input class="form-control" asp-for="EmailOuUsername" type="text"/>
                             <label for="EmailOuUsername">Email/Username</label>
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.EmailOuUsername)</span>
                             <!-- Exibe mensagem de validação, caso o campo tenha algum erro -->
@@ -25,7 +25,7 @@
 
                         <div class="form-floating mb-3">
                             <!-- Campo de input para a Senha -->
-                            <input class="form-control" asp-for="Senha" type="password" />
+                            <input class="form-control" asp-for="Senha" type="password" maxlength="20"/>
                             <label for="Senha">Senha</label>
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
                             <!-- Exibe mensagem de validação, caso o campo tenha algum erro -->

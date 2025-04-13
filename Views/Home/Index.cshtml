@@ -2,12 +2,11 @@
 
 <div class="container-fluid py-3">
     <div class="row justify-content-center">
-
         <!-- Coluna de posts -->
         <div class="col-12 col-md-8">
             @if (Model.Posts != null && Model.Posts.Any())
             {
-                foreach (var post in Model.Posts)
+                foreach (var post in Model.Posts.Take(25))
                 {
                     <div class="card mx-auto mb-4" style="max-width: 600px;">
                         <!-- Cabeçalho do Post -->
@@ -35,15 +34,19 @@
                                     </div>
                                 }
                             </div>
-                            <!-- Controles do Carrossel -->
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
+                            @if(post.ImagemPost.Count > 1)
+                            {
+                                <!-- Controles do Carrossel -->
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            }
+                          
                         </div>
 
                         <!-- Corpo do Post -->
@@ -144,13 +147,14 @@
                                 <div class="ms-auto">
                                     <!-- Formulário para seguir/desseguir -->
                                     <form class="seguirOuDeseguirForm" data-seguindo-id="@sugestao.Id" data-usuario-id="@Model.UsuarioLogado.Id" method="post">
+
                                         @if (Model.UsuarioLogado.Seguindo != null && Model.UsuarioLogado.Seguindo.Contains(sugestao.Id))
                                         {
-                                            <button type="submit" class="btn btn-outline-dark"> Seguindo </button>
+                                            <button type="submit" class="btn btn-small btn-outline-dark"> Seguindo </button>
                                         }
                                         else
                                         {
-                                            <button type="submit" class="btn btn-dark"> Seguir </button>
+                                            <button type="submit" class="btn btn-small btn-dark"> Seguir </button>
                                         }
                                     </form>
                                 </div>

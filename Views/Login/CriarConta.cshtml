@@ -17,12 +17,14 @@
                 <div class="card-body">
                     <!-- Formulário que será enviado via POST para o controller Login, action CriarConta -->
                     <form asp-controller="Login" asp-action="CriarConta" method="post">
+                        <input type="hidden" asp-for="Id" value=""/>
+
                         <div class="row mb-3">
                             <!-- Linha de campos: Nome e Username -->
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
                                     <!-- Campo para o nome do usuário -->
-                                    <input class="form-control" asp-for="Nome" type="text" required />
+                                    <input class="form-control" asp-for="Nome" type="text" maxlength="30" required/>
                                     <label for="Nome">Nome</label>
                                     <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.Nome)</span>
@@ -31,7 +33,7 @@
                             <div class="col-md-6">
                                 <div class="form-floating">
                                     <!-- Campo para o username do usuário -->
-                                    <input class="form-control" asp-for="Username" type="text" style="text-transform: lowercase;" required />
+                                    <input class="form-control" asp-for="Username" type="text" maxlength="20" required />
                                     <label for="Username">Username</label>
                                     <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
@@ -40,7 +42,7 @@
                         </div>
                         <div class="form-floating mb-3">
                             <!-- Campo para o email do usuário -->
-                            <input class="form-control" asp-for="Email" type="email" style="text-transform: lowercase;" required />
+                            <input class="form-control" asp-for="Email" type="email" maxlength="150" required />
                             <label for="Email">Email</label>
                             <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                             <span class="text-danger">@Html.ValidationMessageFor(x => x.Email)</span>
@@ -50,7 +52,7 @@
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
                                     <!-- Campo para a data de nascimento -->
-                                    <input class="form-control" asp-for="DataNascimento" type="date" min="1920-01-01" max="2010-01-01" />
+                                    <input class="form-control" asp-for="DataNascimento" type="date" min="1920-01-01" max="2007-01-01" title="Selecione uma data entre 01/01/1920 e 01/01/2007" />
                                     <label for="DataNascimento">Data de Nascimento</label>
                                     <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
@@ -71,7 +73,7 @@
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
                                     <!-- Campo para a senha do usuário -->
-                                    <input class="form-control" asp-for="Senha" type="password" id="Senha" name="Senha" required />
+                                    <input class="form-control" asp-for="Senha" type="password" id="Senha" name="Senha" maxlength="20" required />
                                     <label for="Senha">Senha</label>
                                     <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                                     <span id="senhaErro" class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
@@ -80,7 +82,7 @@
                             <div class="col-md-6">
                                 <div class="form-floating mb-3 mb-md-0">
                                     <!-- Campo para confirmação da senha -->
-                                    <input class="form-control" asp-for="SenhaConfirmacao" type="password" />
+                                    <input class="form-control" asp-for="SenhaConfirmacao" type="password" maxlength="20"/>
                                     <label for="SenhaConfirmacao">Senha Confirmação</label>
                                     <!-- Mensagem de erro de validação, caso o campo não seja preenchido corretamente -->
                                     <span class="text-danger">@Html.ValidationMessageFor(x => x.SenhaConfirmacao)</span>
@@ -107,6 +109,14 @@
 </div>
 
 @section scripts {
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDm12Mf116MlgdKgdAUPzDwqpDrjTudYpc&libraries=places&callback=initAutocomplete" async defer></script>
+    <script>
+        const apiKey = '@ViewBag.GoogleApiKey';  // Acessando a chave via ViewBag
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    </script>
     <script src="~/js/googleApi.js"></script>
+    <script src="~/js/validacao-senha.js"></script>
 }

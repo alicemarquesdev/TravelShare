@@ -108,9 +108,18 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao tentar curtir ou descurtir o post.");
-                // Caso ocorra algum erro, retorna um JSON com falha
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao tentar curtir ou descurtir o post. Tente novamente mais tarde.";
+                }
+
                 return Json(new { success = false, message = "Ocorreu um erro ao tentar curtir ou descurtir o post. Tente novamente mais tarde." });
             }
+         
         }
     }
 }

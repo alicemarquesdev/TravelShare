@@ -13,7 +13,7 @@ namespace TravelShare.Filters
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             // Recupera o valor da sessão do usuário logado. A sessão contém informações sobre o estado de login.
-            string sessaoDoUsuario = context.HttpContext.Session.GetString("sessaoUsuarioLogado");
+            string sessaoDoUsuario = context.HttpContext.Session.GetString("SessaoDoUsuarioLogado");
 
             // Verifica se o usuário não está logado (a sessão está vazia ou nula).
             if (string.IsNullOrEmpty(sessaoDoUsuario))

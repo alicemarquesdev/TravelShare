@@ -3,6 +3,7 @@ using TravelShare.Data;
 using TravelShare.Helper;
 using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TravelShare.Repository
 {
@@ -13,11 +14,13 @@ namespace TravelShare.Repository
     public class AlterarSenhaRepositorio : IAlteracaoSenhaRepository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
+        private readonly ILogger<AlterarSenhaRepositorio> _logger;
 
         // Construtor que recebe o contexto do MongoDB e inicializa a coleção de usuários
-        public AlterarSenhaRepositorio(MongoContext mongoContext)
+        public AlterarSenhaRepositorio(MongoContext mongoContext, ILogger<AlterarSenhaRepositorio> logger)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
+            _logger = logger;
         }
 
         // Método para alterar a senha de um usuário
@@ -34,13 +37,13 @@ namespace TravelShare.Repository
                 // Verifica se a senha atual informada está correta
                 if (!usuarioDb.SenhaValida(alterarSenha.SenhaAtual))
                 {
-                    throw new Exception("A senha atual informada não está correta.");
+                    throw new InvalidOperationException("A senha atual informada não está correta.");
                 }
 
                 // Se a nova senha for igual à senha atual, lança uma exceção
                 if (usuarioDb.SenhaValida(alterarSenha.NovaSenha))
                 {
-                    throw new Exception("A nova senha não pode ser igual à senha atual.");
+                    throw new InvalidOperationException("A nova senha não pode ser igual à senha atual.");
                 }
 
                 // Define a nova senha para o usuário
@@ -58,10 +61,16 @@ namespace TravelShare.Repository
                 // Retorna true se a senha foi atualizada com sucesso (modified count maior que 0)
                 return resultado.ModifiedCount > 0;
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Ocorreu um erro ao alterar a senha");
+                throw new InvalidOperationException(ex.Message);
+            }
             catch (Exception ex)
             {
                 // Captura qualquer exceção e loga o erro (pode-se adicionar um logger aqui)
-                throw new Exception("Ocorreu um erro ao alterar a senha: " + ex.Message);
+                _logger.LogError(ex, "Ocorreu um erro ao alterar a senha");
+                throw new Exception("Ocorreu um erro ao alterar a senha.");
             }
         }
 
@@ -93,8 +102,9 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Ocorreu um erro ao redefinir  senha");
                 // Captura qualquer exceção e loga o erro 
-                throw new Exception("Ocorreu um erro ao redefinir a senha: " + ex.Message);
+                throw new Exception("Ocorreu um erro ao redefinir a senha.");
             }
         }
     }

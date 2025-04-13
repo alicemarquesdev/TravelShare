@@ -20,15 +20,17 @@ namespace TravelShare.Repository
         private readonly IMongoCollection<ComentarioModel> _comentarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IComentarioRepository _comentarioRepository;
+        private readonly ILogger<PostRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB, repositórios de usuários, comentários e ambiente de hospedagem
         public PostRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository,
-                IComentarioRepository comentarioRepository)
+                IComentarioRepository comentarioRepository, ILogger<PostRepository> logger)
         {
             _postsCollection = mongoContext.GetCollection<PostModel>("Posts");
             _comentarioCollection = mongoContext.GetCollection<ComentarioModel>("Comentarios");
             _usuarioRepository = usuarioRepository;
             _comentarioRepository = comentarioRepository;
+            _logger = logger;
         }
 
         // Método para buscar um post específico pelo seu ID
@@ -48,7 +50,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar post por ID" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar post por ID.");
+                throw new Exception("Erro ao buscar post por ID.");
             }
         }
 
@@ -84,7 +87,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar posts de usuários seguindo" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar posts de usuários seguindo.");
+                throw new Exception("Erro ao buscar posts de usuários seguindo.");
             }
         }
 
@@ -113,7 +117,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Em caso de erro, exibe a mensagem de erro e lança a exceção
-                throw new Exception("Erro ao buscar posts de usuários não seguindo" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar posts de usuários não seguindo.");
+                throw new Exception("Erro ao buscar posts de usuários não seguindo.");
             }
         }
 
@@ -143,7 +148,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Em caso de erro, exibe a mensagem de erro e lança a exceção
-                throw new Exception("Erro ao buscar posts do usuário" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar posts do usuário.");
+                throw new Exception("Erro ao buscar posts do usuário.");
             }
         }
 
@@ -161,7 +167,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Em caso de erro, exibe a mensagem de erro e lança a exceção
-                throw new Exception("Erro ao adicionar post" + ex.Message);
+                _logger.LogError(ex, "Erro ao adicionar post.");
+                throw new Exception("Erro ao adicionar post.");
 
             }
         }
@@ -191,7 +198,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Em caso de erro, exibe a mensagem de erro e lança a exceção
-                throw new Exception("Erro ao atualizar post." + ex.Message);
+                _logger.LogError(ex, "Erro ao atualizar post.");
+                throw new Exception("Erro ao atualizar post.");
             }
         }
 
@@ -226,7 +234,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Em caso de erro, exibe a mensagem de erro e lança a exceção
-                throw new Exception("Erro ao deletar post:" + ex.Message);
+                _logger.LogError(ex, "Erro ao deletar post.");
+                throw new Exception("Erro ao deletar post.");
             }
         }
     }

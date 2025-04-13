@@ -57,7 +57,7 @@ function buscarUsuarios() {
 
                 // Define o conteúdo do item de sugestão com as informações do usuário
                 li.innerHTML = `
-                    <img src="${imagemPerfil}" alt="Foto de perfil" class="rounded-circle" style="width: 40px; height: 40px;">
+                    <img src="${imagemPerfil}" alt="Foto de perfil" class="rounded-circle" style="width: 40px; height: 40px; object-fit:cover;">
                     <div>
                         <div><strong>${nome}</strong> ${username}</div>
                         <div><small>${cidade}</small></div>
@@ -73,3 +73,13 @@ function buscarUsuarios() {
         })
         .catch(error => console.error('Erro ao buscar usuários:', error)); // Exibe erros no console, caso ocorram
 }
+// Função para esconder as sugestões quando o clique for fora do dropdown
+document.addEventListener('click', function (event) {
+    let suggestions = document.getElementById('suggestions');
+    let inputField = document.getElementById('pesquisaInput');
+
+    // Se o clique foi fora do campo de input e das sugestões, esconda as sugestões
+    if (!inputField.contains(event.target) && !suggestions.contains(event.target)) {
+        suggestions.style.display = 'none';
+    }
+});

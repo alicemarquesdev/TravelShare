@@ -13,11 +13,13 @@ namespace TravelShare.Repository
     public class CidadesVisitadasRepository : ICidadesVisitadasRepository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
+        private readonly ILogger<CidadesVisitadasRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB e inicializa a coleção de usuários
-        public CidadesVisitadasRepository(MongoContext mongoContext)
+        public CidadesVisitadasRepository(MongoContext mongoContext, ILogger<CidadesVisitadasRepository> logger)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
+            _logger = logger;
         }
 
         // Método para verificar se uma cidade foi visitada por um usuário
@@ -44,7 +46,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Captura qualquer exceção e loga o erro (pode-se adicionar um logger aqui)
-                throw new Exception("Erro ao verificar cidade visitada: " + ex.Message);
+                _logger.LogError(ex, "Erro ao verificar cidade visitada.");
+                throw new Exception("Erro ao verificar cidade visitada.");
             }
         }
 
@@ -76,7 +79,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Captura qualquer exceção e loga o erro (pode-se adicionar um logger aqui)
-                throw new Exception("Erro ao adicionar cidade: " + ex.Message);
+                _logger.LogError(ex, "Erro ao adicionar cidade.");
+                throw new Exception("Erro ao adicionar cidade.");
             }
         }
 
@@ -107,8 +111,9 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                // Captura qualquer exceção e loga o erro (pode-se adicionar um logger aqui)
-                throw new Exception("Erro ao remover cidade: " + ex.Message);
+                // Captura qualquer exceção e loga o erro 
+                _logger.LogError(ex, "Erro ao remover cidade.");
+                throw new Exception("Erro ao remover cidade.");
             }
         }
     }

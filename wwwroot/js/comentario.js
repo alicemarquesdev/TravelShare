@@ -101,7 +101,7 @@ document.querySelectorAll('.deleteComentarioForm').forEach(form => {
 
         try {
             // Envia o ID do comentário para o servidor para excluí-lo
-            const response = await fetch('/Comentario/DeletarComentario', {
+            const response = await fetch(window.location.origin + "/Comentario/DeletarComentario", {
                 method: 'POST',  // Método POST para deletar o comentário
                 headers: {
                     'Content-Type': 'application/json',  // Cabeçalho indicando que o corpo da requisição está em JSON

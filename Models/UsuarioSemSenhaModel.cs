@@ -26,17 +26,15 @@ namespace TravelShare.Models
         [Required(ErrorMessage = "Digite o email.")]
         [EmailAddress(ErrorMessage = "Email inválido.")]
         [StringLength(150, ErrorMessage = "O email deve ter no máximo 150 caracteres.")]
-        [RegularExpression(@"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", ErrorMessage = "O email deve ser válido e não pode conter espaços.")]
         public required string Email { get; set; }
 
         // Propriedade para a data de nascimento do usuário, com validação de intervalo
         [Required(ErrorMessage = "Digite a data de nascimento.")]
-        [Range(typeof(DateTime), "01/01/1900", "01/01/2025", ErrorMessage = "Data de nascimento inválida.")]
         public required DateTime DataNascimento { get; set; }
 
         // Propriedade para a cidade de nascimento, com validação de comprimento
         [Required(ErrorMessage = "Digite a cidade onde nasceu.")]
-        [StringLength(200, ErrorMessage = "Máximo 200 caracteres.")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
         public required string CidadeDeNascimento { get; set; }
 
         // Propriedade para a imagem de perfil do usuário, com valor padrão
@@ -44,6 +42,7 @@ namespace TravelShare.Models
 
         // Propriedade opcional para a bio do usuário, com validação de comprimento
         [StringLength(300, ErrorMessage = "A Bio deve ter no máximo 300 caracteres.")]
+        [RegularExpression(@"^[A-Za-zÀ-ÿ0-9.,!?()'""\s-]+$", ErrorMessage = "Contém caracteres inválidos")]
         public string? Bio { get; set; }
 
         // Lista das cidades visitadas pelo usuário, iniciada como uma lista vazia

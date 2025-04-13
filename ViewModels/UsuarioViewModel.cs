@@ -5,6 +5,9 @@ namespace TravelShare.ViewModels
     // ViewModel utilizado para exibir dados relacionados ao perfil do usuário
     public class UsuarioViewModel
     {
+        // Para armazenar o chave da API
+        public string? GoogleAPIKey { get; set; } 
+
         // Indica se o perfil exibido é o do próprio usuário logado (true) ou de outro usuário (false)
         public bool PerfilDoUsuarioLogado { get; set; }
 

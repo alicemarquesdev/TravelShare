@@ -11,7 +11,7 @@ namespace TravelShare.Models
         // Identificador único do usuário no MongoDB
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public required string Id { get; set; }
+        public string? Id { get; set; }
 
         // Nome do usuário
         [BsonElement("Nome")]
@@ -34,7 +34,6 @@ namespace TravelShare.Models
         [Required(ErrorMessage = "Digite o email.")]
         [EmailAddress(ErrorMessage = "Email inválido.")]
         [StringLength(150, ErrorMessage = "O email deve ter no máximo 150 caracteres.")]
-        [RegularExpression(@"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", ErrorMessage = "O email deve ser válido e não pode conter espaços.")]
         public required string Email { get; set; }
 
         // Senha do usuário
@@ -54,13 +53,13 @@ namespace TravelShare.Models
         [BsonElement("DataNascimento")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         [Required(ErrorMessage = "Digite a data de nascimento.")]
-        [Range(typeof(DateTime), "01/01/1920", "01/01/2010", ErrorMessage = "Data de nascimento inválida.")]
         public required DateTime DataNascimento { get; set; }
 
         // Cidade onde o usuário nasceu
         [BsonElement("CidadeDeNascimento")]
         [Required(ErrorMessage = "Digite a cidade onde nasceu.")]
-        [StringLength(200, ErrorMessage = "Máximo 200 caracteres.")]
+        [RegularExpression(@"^[A-Za-zÀ-ÿ0-9.,!?()'""\s-]+$", ErrorMessage = "Contém caracteres inválidos")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
         public required string CidadeDeNascimento { get; set; }
 
         // Caminho da imagem de perfil do usuário
@@ -70,6 +69,7 @@ namespace TravelShare.Models
         // Biografia do usuário
         [BsonElement("Bio")]
         [StringLength(300, ErrorMessage = "A bio deve ter no máximo 300 caracteres.")]
+        [RegularExpression(@"^[A-Za-zÀ-ÿ0-9.,!?()'""\s-]+$", ErrorMessage = "Contém caracteres inválidos")]
         public string? Bio { get; set; }
 
         // Data de registro do usuário na plataforma

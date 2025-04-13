@@ -1,4 +1,7 @@
-﻿using TravelShare.Helper.Interfaces;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
+using TravelShare.Helper.Interfaces;
 
 namespace TravelShare.Helper
 {
@@ -25,55 +28,52 @@ namespace TravelShare.Helper
         {
             try
             {
-                // Verificação se a imagem é nula
                 if (imagem == null)
-                {
                     throw new ArgumentNullException(nameof(imagem), "A imagem não pode ser nula.");
-                }
 
-                // Definir o limite de tamanho (1MB)
-                const int TamanhoMaximoImagemMB = 1;
-                const long TamanhoMaximoImagemBytes = TamanhoMaximoImagemMB * 1024 * 1024; // 1MB em bytes
+                const int TamanhoMaximoImagemMB = 2;
+                const long TamanhoMaximoImagemBytes = TamanhoMaximoImagemMB * 1024 * 1024;
 
-                // Verificação do tamanho da imagem
-                if (imagem.Length > TamanhoMaximoImagemBytes)
-                {
-                    throw new InvalidDataException($"A imagem não pode exceder {TamanhoMaximoImagemMB}MB.");
-                }
-
-                // Validação de extensão (somente .jpg, .png, .jpeg são permitidos)
                 var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png" };
-                var extensao = Path.GetExtension(imagem.FileName).ToLower(); // Obtém a extensão do arquivo e converte para minúscula.
-
-                // Verifica se a extensão da imagem é permitida
+                var extensao = Path.GetExtension(imagem.FileName).ToLower();
                 if (!extensoesPermitidas.Contains(extensao))
-                {
-                    throw new InvalidDataException("Somente arquivos com as extensões .jpg, .jpeg e .png são permitidos.");
-                }
+                    throw new InvalidDataException("Somente arquivos .jpg, .jpeg e .png são permitidos.");
 
-                // Gera um código único para nomear o arquivo
                 var codigoUnico = Guid.NewGuid().ToString();
-                var nomeCaminhoImagem = codigoUnico + extensao; // Nome do arquivo gerado com a extensão.
-
-                // Caminho onde a imagem será salva no servidor
+                var nomeCaminhoImagem = $"{codigoUnico}{extensao}";
                 var caminhoParaSalvarImagem = Path.Combine(_sistema, "image");
 
-                // Verifica se o diretório para salvar a imagem existe, caso contrário, cria o diretório
                 if (!Directory.Exists(caminhoParaSalvarImagem))
-                {
                     Directory.CreateDirectory(caminhoParaSalvarImagem);
-                }
 
-                // Caminho completo onde a imagem será armazenada
                 var caminhoCompleto = Path.Combine(caminhoParaSalvarImagem, nomeCaminhoImagem);
 
-                // Salva a imagem no diretório especificado
-                using (var stream = File.Create(caminhoCompleto))
+                // Processamento da imagem (compressão e redimensionamento)
+                using (var stream = imagem.OpenReadStream())
+                using (var image = await Image.LoadAsync(stream))
                 {
-                    await imagem.CopyToAsync(stream); // Copia o conteúdo da imagem para o arquivo.
+                    // Reduz a qualidade da imagem para reduzir o tamanho do arquivo
+                    var encoder = new JpegEncoder { Quality = 80 }; // Ajuste a qualidade se necessário
+
+                    // Se a imagem for muito grande, redimensiona para uma largura máxima de 1920px
+                    if (image.Width > 1920)
+                    {
+                        image.Mutate(x => x.Resize(1920, 0));
+                    }
+
+                    // Salva a imagem processada garantindo que ela fique abaixo do limite
+                    using (var outputStream = new MemoryStream())
+                    {
+                        await image.SaveAsync(outputStream, encoder);
+
+                        // Verifica se ainda está acima do limite de 2MB
+                        if (outputStream.Length > TamanhoMaximoImagemBytes)
+                            throw new InvalidDataException("Não foi possível reduzir a imagem abaixo de 2MB.");
+
+                        await File.WriteAllBytesAsync(caminhoCompleto, outputStream.ToArray());
+                    }
                 }
 
-                // Retorna o caminho da imagem salva, usando uma URL relativa
                 return Path.Combine("~/image", nomeCaminhoImagem).Replace("\\", "/");
             }
             catch (ArgumentNullException ex)
@@ -86,7 +86,7 @@ namespace TravelShare.Helper
             {
                 // Loga o erro caso o formato ou tamanho da imagem seja inválido
                 _logger.LogError(ex, "Erro: Formato de imagem inválido ou tamanho excedido.");
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
             catch (Exception ex)
             {

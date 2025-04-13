@@ -4,6 +4,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     // Seleciona todos os botões de curtida na página
     const botoesCurtida = document.querySelectorAll(".curtida-btn");
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
     // Adiciona o evento de clique a cada botão de curtida
     botoesCurtida.forEach((button) => {

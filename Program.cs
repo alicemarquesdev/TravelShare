@@ -4,14 +4,23 @@ using TravelShare.Helper.Interfaces;
 using TravelShare.Repository;
 using TravelShare.Repository.Interfaces;
 using static TravelShare.Data.MongoContext;
+using Serilog;
 
 namespace TravelShare
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+             .WriteTo.Console() // Logs no Console
+             .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day) // Logs em arquivo
+             .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+
+            // Adicionar Serilog como provedor de logs
+            builder.Host.UseSerilog();
 
             // Adicionar serviços à aplicação
             ConfigureServices(builder);
@@ -31,6 +40,11 @@ namespace TravelShare
             // Serviços de Controllers e Views
             builder.Services.AddControllersWithViews();
 
+            builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
+
+            // Adicionar suporte à compactação de resposta
+            builder.Services.AddResponseCompression();
+
             // Configuração MongoDB
             builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoDB"));
             builder.Services.AddSingleton<MongoContext>();
@@ -38,9 +52,7 @@ namespace TravelShare
             // Configuração de repositórios
             RegisterRepositories(builder);
 
-            // Adicionar o IHttpContextAccessor
-            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
+        
             // Configuração de serviços adicionais
             builder.Services.AddScoped<ISessao, Sessao>();
             builder.Services.AddScoped<ICaminhoImagem, CaminhoImagem>();
@@ -60,6 +72,9 @@ namespace TravelShare
                 o.Cookie.IsEssential = true;
                 o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
+
+            // Adicionar o IHttpContextAccessor
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // Configuração de serviços adicionais, como Notificação Cleanup Service
             builder.Services.AddHostedService<NotificacaoCleanupService>();
@@ -90,12 +105,18 @@ namespace TravelShare
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
+            // Captura o erro 400 (Bad Request) devido à falha no token
+            app.UseStatusCodePagesWithRedirects("/Home/Error");
+
             app.UseRouting();
+
+            app.UseSession();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseSession();
+            // Adicionar compressão de resposta
+            app.UseResponseCompression();
 
             // Mapeamento de rotas da aplicação
             app.MapControllerRoute(

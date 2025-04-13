@@ -54,8 +54,12 @@ namespace TravelShare.Controllers
 
                 if (cidadeExistente)
                 {
-                    _logger.LogInformation($"A cidade {request.Cidade} já está na lista de cidades visitadas de {usuario.Id}.");
-                    return Json(new { success = false, message = "A cidade já está na lista." });
+                    TempData["Message"] = $"A cidade {request.Cidade} já está na lista de cidades visitadas de {usuario.Nome}.";
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"A cidade {request.Cidade} já está na lista de cidades visitadas de {usuario.Nome}."
+                    });
                 }
 
                 // Adiciona a cidade à lista do usuário
@@ -75,6 +79,15 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar cidade.");
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao adicionar a cidade. Tente novamente mais tarde.";
+                }
+
                 return Json(new { success = false, message = "Ocorreu um erro ao adicionar a cidade. Tente novamente mais tarde." });
             }
         }
@@ -112,6 +125,15 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao remover cidade.");
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao remover a cidade. Tente novamente mais tarde.";
+                }
+
                 return Json(new { success = false, message = "Ocorreu um erro ao remover a cidade. Tente novamente mais tarde." });
             }
         }

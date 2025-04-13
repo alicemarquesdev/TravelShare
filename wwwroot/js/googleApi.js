@@ -1,5 +1,4 @@
-﻿// API DO GOOGLE MAPS
-// Responsável pela exibição do mapa em perfil
+﻿// Responsável pela exibição do mapa em perfil
 // Contém o AutoComplete para adicionar cidades existentes usando api do google maps
 
 let map;
@@ -86,7 +85,7 @@ function initAutocomplete() {
 function initMap() {
     const mapOptions = {
         center: { lat: 0, lng: 15 }, // Definindo as coordenadas iniciais do mapa para o Oceano Atlântico
-        zoom: 3, // Nível de zoom inicial
+        zoom: 1, // Nível de zoom inicial
         minZoom: 2, // Zoom mínimo permitido
         maxZoom: 10, // Zoom máximo permitido
         mapTypeId: 'roadmap', // Tipo de mapa a ser exibido
@@ -103,14 +102,6 @@ function initMap() {
 
     // Adiciona os marcadores para as cidades no mapa
     addMarkers(cidades);
-
-    // Verifica se existe uma cidade de origem e adiciona um marcador
-    const cidadeOrigem = document.getElementById("cidadeNascimento").dataset.cidadenascimento;
-    if (cidadeOrigem) {
-        addMarkerCidadeOrigem(cidadeOrigem);
-    }
-
-    console.log(cidadeOrigem); // Exibe a cidade de origem no console
 }
 
 // Função para adicionar marcadores no mapa com base em uma lista de cidades
@@ -135,7 +126,7 @@ function addMarkers(cidades) {
 
                 // Cria uma janela de informações que será aberta ao clicar no marcador
                 const infowindow = new google.maps.InfoWindow({
-                    content: `<strong>${city}</strong>`
+                    content: `<strong><a href="https://www.google.com/maps?q=${encodeURIComponent(city)}" target="_blank">${city}</a></strong>`
                 });
 
                 // Adiciona um evento de clique no marcador para abrir a janela de informações
@@ -149,34 +140,6 @@ function addMarkers(cidades) {
     });
 }
 
-// Função para adicionar o marcador da cidade de origem com um ícone diferenciado
-function addMarkerCidadeOrigem(cidadeOrigem) {
-    geocoder.geocode({ 'address': cidadeOrigem }, function (results, status) {
-        if (status === 'OK') {
-            const location = results[0].geometry.location;
-
-            // Cria um marcador especial para a cidade de origem (ícone azul)
-            const marker = new google.maps.Marker({
-                map: map,
-                position: location,
-                title: cidadeOrigem,
-                icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Ícone azul para destacar
-            });
-
-            // Cria uma janela de informações para a cidade de origem
-            const infowindow = new google.maps.InfoWindow({
-                content: `<strong>${cidadeOrigem}</strong>`
-            });
-
-            // Adiciona um evento de clique no marcador para abrir a janela de informações
-            marker.addListener('click', function () {
-                infowindow.open(map, marker);
-            });
-        } else {
-            console.log('Erro ao geocodificar a cidade:', cidadeOrigem); // Exibe um erro caso o geocoding falhe
-        }
-    });
-}
 
 // Garante que a função 'initGoogleMaps' seja executada corretamente após o carregamento da API do Google Maps
 window.initGoogleMaps = initGoogleMaps;

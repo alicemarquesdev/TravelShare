@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using TravelShare.Filters;
@@ -30,8 +31,8 @@ namespace TravelShare.Controllers
         // Construtor do controlador, responsável por injetar as dependências.
         // Se qualquer uma das dependências for nula, lança exceção para evitar erros.
         public PostController(IOptions<GoogleAPISettings> googleAPISettings,
-                              IPostRepository postRepository, 
-                              ISessao sessao, 
+                              IPostRepository postRepository,
+                              ISessao sessao,
                               ICaminhoImagem caminhoImagem,
                               ICidadesVisitadasRepository cidadesVisitadasRepository,
                               ILogger<PostController> logger)
@@ -40,7 +41,7 @@ namespace TravelShare.Controllers
             _postRepository = postRepository ?? throw new ArgumentNullException(nameof(postRepository), "Repositório de posts não pode ser nulo.");
             _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao), "Sessão não pode ser nula.");
             _caminhoImagem = caminhoImagem ?? throw new ArgumentNullException(nameof(caminhoImagem), "Caminho da imagem não pode ser nulo.");
-            _cidadesVisitadasRepository =  cidadesVisitadasRepository ?? throw new ArgumentNullException(nameof(cidadesVisitadasRepository), "Cidades Visitadas Repositorio não pode ser nulo.");
+            _cidadesVisitadasRepository = cidadesVisitadasRepository ?? throw new ArgumentNullException(nameof(cidadesVisitadasRepository), "Cidades Visitadas Repositorio não pode ser nulo.");
             _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger não pode ser nulo.");
         }
 
@@ -82,6 +83,7 @@ namespace TravelShare.Controllers
 
         // Método para criar um novo post, recebendo os dados do post e imagens
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> CriarPost(PostModel post, IList<IFormFile> ImagemPost)
         {
             try
@@ -94,60 +96,74 @@ namespace TravelShare.Controllers
                 }
 
                 post.UsuarioId = usuario.Id;  // Atribui o ID do usuário ao post
+                ModelState.Clear(); // Isso força a revalidação do modelo
+                TryValidateModel(post); // Revalida o modelo manualmente
 
                 // Verifica se o estado do modelo é válido (se todos os campos obrigatórios foram preenchidos corretamente)
-                if (!ModelState.IsValid)
+                if (ModelState.IsValid)
                 {
-                    TempData["Message"] = "Dados inválidos, tente novamente.";  // Caso contrário, exibe mensagem de erro
-                    return View(post);  // Retorna à view com o post
-                }
+                    // Lista para armazenar os caminhos das imagens que serão salvas
+                    var caminhosImagens = new List<string>();
 
-                // Lista para armazenar os caminhos das imagens que serão salvas
-                var caminhosImagens = new List<string>();
-
-                // Processa cada imagem recebida no formulário
-                foreach (var imagem in ImagemPost)
-                {
-
-                    // Gera o caminho do arquivo da imagem
-                    var caminhoImagem = await _caminhoImagem.GerarCaminhoArquivoAsync(imagem);
-
-                    // Se o caminho for nulo, significa que houve erro ao salvar a imagem
-                    if (caminhoImagem == null)
+                    // Processa cada imagem recebida no formulário
+                    foreach (var imagem in ImagemPost)
                     {
-                        throw new Exception("Erro ao salvar imagem");
+
+                        // Gera o caminho do arquivo da imagem
+                        var caminhoImagem = await _caminhoImagem.GerarCaminhoArquivoAsync(imagem);
+
+                        // Se o caminho for nulo, significa que houve erro ao salvar a imagem
+                        if (caminhoImagem == null)
+                        {
+                            throw new Exception("Erro ao salvar imagem");
+                        }
+
+                        // Adiciona o caminho da imagem à lista
+                        caminhosImagens.Add(caminhoImagem);
                     }
 
-                    // Adiciona o caminho da imagem à lista
-                    caminhosImagens.Add(caminhoImagem);
+                    // Atribui os caminhos das imagens ao post
+                    post.ImagemPost = caminhosImagens;
+                    // Gera um novo ID para o post
+                    post.Id = ObjectId.GenerateNewId().ToString();
+
+                    // Chama o repositório para salvar o post no banco de dados
+                    await _postRepository.AddPostAsync(post);
+
+                    // Adicionar a localizacao do post no mapa.
+                    if(post.Localizacao != null)
+                    {
+                        await _cidadesVisitadasRepository.AddCidadeAsync(post.UsuarioId, post.Localizacao);
+                    }
+
+                    // Exibe mensagem de sucesso e redireciona para o perfil do usuário
+                    TempData["Message"] = "Post publicado com sucesso!";
+                    return RedirectToAction("Perfil", "Usuario", new { id = post.UsuarioId });
                 }
 
-                // Atribui os caminhos das imagens ao post
-                post.ImagemPost = caminhosImagens;
-                // Gera um novo ID para o post
-                post.Id = ObjectId.GenerateNewId().ToString();
+                TempData["Message"] = "Preencha os dados corretamente.";
+                return View(post);
 
-                // Chama o repositório para salvar o post no banco de dados
-                await _postRepository.AddPostAsync(post);
-
-                // Adicionar a localizacao do post no mapa.
-                await _cidadesVisitadasRepository.AddCidadeAsync(post.UsuarioId, post.Localizacao);
-
-                // Exibe mensagem de sucesso e redireciona para o perfil do usuário
-                TempData["Message"] = "Post publicado com sucesso!";
-                return RedirectToAction("Perfil", "Usuario", new { id = post.UsuarioId });
             }
             catch (Exception ex)
             {
-                // Registra erro no log e exibe mensagem de erro
                 _logger.LogError(ex, "Erro ao criar o post.");
-                TempData["Message"] = "Ocorreu um erro ao criar o post.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao criar o post. Tente novamente.";
+                }
+
                 return View(post);  // Retorna à view com o post
             }
         }
 
         // Método para editar um post existente
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> EditarPost(PostModel post)
         {
             try
@@ -155,8 +171,8 @@ namespace TravelShare.Controllers
                 // Verifica se os dados do modelo são válidos antes de tentar salvar
                 if (!ModelState.IsValid)
                 {
-                    TempData["Message"] = "Dados inválidos, tente novamente.";  // Exibe mensagem de erro
-                    return View(post);  // Retorna à view com o post
+                    TempData["Message"] = "Preencha os campos corretamente";
+                    return View(post);
                 }
 
                 // Busca o post existente pelo ID
@@ -174,15 +190,23 @@ namespace TravelShare.Controllers
             }
             catch (Exception ex)
             {
-                // Em caso de erro, registra no log e exibe uma mensagem amigável
                 _logger.LogError(ex, "Erro ao editar o post.");
-                TempData["Message"] = "Erro ao editar o post.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao editar o post. Tente novamente.";
+                }
+
                 return View(post);  // Retorna à view com o post
             }
         }
 
         // Método para deletar um post
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> DeletarPost(string id)
         {
             try
@@ -190,9 +214,8 @@ namespace TravelShare.Controllers
                 // Verifica se o ID do post foi fornecido
                 if (string.IsNullOrEmpty(id))
                 {
-                    TempData["Message"] = "ID do post não fornecido.";  // Exibe mensagem de erro
-                    return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
-                }
+                    throw new Exception("ID do post não fornecido.");
+                                   }
 
                 // Busca o post existente pelo ID
                 var postExistente = await _postRepository.BuscarPostPorIdAsync(id);
@@ -222,14 +245,20 @@ namespace TravelShare.Controllers
                 }
 
                 // Caso não tenha sido possível deletar o post, exibe mensagem de erro
-                TempData["Message"] = "Erro ao deletar o post.";
-                return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
-            }
+                throw new Exception("Erro ao deletar o post.");
+                            }
             catch (Exception ex)
             {
-                // Registra erro no log e exibe mensagem de erro
                 _logger.LogError(ex, "Erro ao deletar o post.");
-                TempData["Message"] = "Erro ao deletar o post.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao deletar o post. Tente novamente.";
+                }
+
                 return Redirect(Request.Headers["Referer"].ToString());  // Redireciona para a página anterior
             }
         }

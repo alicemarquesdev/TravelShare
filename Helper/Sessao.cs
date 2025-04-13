@@ -22,7 +22,7 @@ namespace TravelShare.Helper
         public UsuarioModel BuscarSessaoDoUsuario()
         {
             // Recupera a sessão do usuário do contexto HTTP
-            string sessaoDoUsuario = _httpContext.HttpContext.Session.GetString("SessaoDoUsuarioLogado");
+            string sessaoDoUsuario = _httpContext.HttpContext?.Session.GetString("SessaoDoUsuarioLogado") ?? "";
 
             // Se a sessão estiver vazia ou nula, retorna null
             if (string.IsNullOrEmpty(sessaoDoUsuario))

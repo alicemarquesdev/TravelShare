@@ -18,12 +18,14 @@ namespace TravelShare.Repository
     {
         private readonly IMongoCollection<UsuarioModel> _usuarioCollection;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILogger<SeguidorRepository> _logger;
 
         // Construtor que recebe o contexto do MongoDB e o repositório de usuários
-        public SeguidorRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository)
+        public SeguidorRepository(MongoContext mongoContext, IUsuarioRepository usuarioRepository, ILogger<SeguidorRepository> logger)
         {
             _usuarioCollection = mongoContext.GetCollection<UsuarioModel>("Usuarios");
             _usuarioRepository = usuarioRepository;
+            _logger = logger;
         }
 
         // Método para buscar todos os seguidores de um usuário
@@ -51,7 +53,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar seguidores" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar seguidores");
+                throw new Exception("Erro ao buscar seguidores.");
             }
         }
 
@@ -65,7 +68,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar seguidor");
+                throw new Exception("Erro ao buscar seguidor.");
             }
         }
 
@@ -98,7 +102,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao remover seguidor" + ex.Message);
+                _logger.LogError(ex, "Erro ao remover seguidor");
+                throw new Exception("Erro ao remover seguidor.");
             }
         }
 
@@ -127,7 +132,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar seguidores");
+                throw new Exception("Erro ao buscar seguidor.");
             }
         }
 
@@ -142,7 +148,8 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 // Caso haja erro, captura a exceção e retorna null
-                throw new Exception("Erro ao buscar seguidor" + ex.Message);
+                _logger.LogError(ex, "Erro ao buscar seguidor");
+                throw new Exception("Erro ao buscar seguidor.");
             }
         }
 
@@ -178,7 +185,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao deseguir usuario" + ex.Message);
+                _logger.LogError(ex, "Erro ao deseguir usuario");
+                throw new Exception("Erro ao deseguir usuario.");
 
             }
         }
@@ -222,7 +230,8 @@ namespace TravelShare.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao seguir usuario" + ex.Message);
+                _logger.LogError(ex, "Erro ao seguir usuario");
+                throw new Exception("Erro ao seguir usuario.");
             }
         }
     }

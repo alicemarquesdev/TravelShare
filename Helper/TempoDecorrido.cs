@@ -10,24 +10,24 @@
             var tempoPassado = DateTime.Now - dataCriacao;
 
             // Se passou menos de 1 minuto, retorna "Agora mesmo"
-            if (tempoPassado.TotalMinutes < 1)
+            if (tempoPassado.TotalSeconds < 60)
             {
                 return "Agora mesmo";
             }
             // Se passou menos de uma hora, retorna o número de minutos
             else if (tempoPassado.TotalMinutes < 60)
             {
-                return $"{(int)tempoPassado.TotalMinutes} minutos";
+                return $"{Math.Floor(tempoPassado.TotalMinutes)} minutos";
             }
             // Se passou menos de um dia, retorna o número de horas
             else if (tempoPassado.TotalHours < 24)
             {
-                return $"{(int)tempoPassado.TotalHours} horas";
+                return $"{Math.Floor(tempoPassado.TotalHours)} horas";
             }
             // Se passou menos de uma semana, retorna o número de dias
             else if (tempoPassado.TotalDays < 7)
             {
-                return $"{(int)tempoPassado.TotalDays} dias";
+                return $"{Math.Floor(tempoPassado.TotalDays)} dias";
             }
             // Caso contrário, retorna a data formatada
             else

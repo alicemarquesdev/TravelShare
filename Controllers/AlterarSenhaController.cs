@@ -56,14 +56,15 @@ namespace TravelShare.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Erro ao tentar carregar AlterarSenha.");
+                _logger.LogError(ex, "Erro ao tentar carregar AlterarSenha.");
                 TempData["Message"] = "Desculpe, erro ao tentar carregar a página.";
-                return RedirectToAction("Perfil", "Usuario");
+                return RedirectToAction("Perfil", "Usuario", new { id = id});
             }
         }
 
         // Método POST para alterar senha
         [HttpPost]
+        [ValidateAntiForgeryToken] // Validar Token
         public async Task<IActionResult> AlterarSenha(AlterarSenhaModel alterarSenha)
         {
             try
@@ -92,15 +93,24 @@ namespace TravelShare.Controllers
                 }
 
                 _logger.LogWarning("Modelo de dados inválido para alteração de senha.");
-                TempData["Message"] = "Houve um erro, verifique os dados inseridos.";
-                return RedirectToAction("AlterarSenha", "AlterarSenha");
+                throw new InvalidOperationException("Os dados inseridos não são válidos");
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao tentar alterar a senha.");
-                TempData["Message"] = "Ocorreu um erro ao tentar alterar a senha. Tente novamente.";
+                if (ex.InnerException is InvalidOperationException || ex is InvalidOperationException)
+                {
+                    TempData["Message"] = ex.Message;  // Exibe a mensagem amigável
+                }
+                else
+                {
+                    TempData["Message"] = "Ocorreu um erro ao tentar alterar a senha. Tente novamente.";
+                }
+
                 return RedirectToAction("AlterarSenha", "AlterarSenha");
             }
+
         }
     }
 }
