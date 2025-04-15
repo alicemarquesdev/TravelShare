@@ -75,7 +75,7 @@ Antes de rodar o projeto, você precisa ter:
 git clone https://github.com/alicemarquesdev/TravelShare.git
 ```
 
-2️⃣ Restaure os pacotes NuGet
+#### 2️⃣ Restaure os pacotes NuGet
 
 ```bash
 dotnet restore
@@ -91,7 +91,7 @@ Pacotes NuGet utilizados:
 - Serilog.Sinks.File (6.0.0)
 - SixLabors.ImageSharp
 
-3️⃣ Configure o appsettings.json
+#### 3️⃣ Configure o appsettings.json
 Crie ou edite o arquivo appsettings.json com suas informações de conexão, API e SMTP:
 
 ```bash
@@ -135,13 +135,13 @@ Crie ou edite o arquivo appsettings.json com suas informações de conexão, API
 }
 ```
 
-4️⃣ Execute o projeto
+#### 4️⃣ Execute o projeto
 No Visual Studio, clique em Iniciar (F5) ou use: 
 ```bash
 dotnet run
 ```
 
-5️⃣ Acesse no navegador
+#### 5️⃣ Acesse no navegador
 O projeto estará disponível em:
 ```bash
 http://localhost:5000
