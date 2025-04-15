@@ -1,6 +1,5 @@
-﻿# 🌍 Travel Share
- [Veja a aplicação em ação](mailto:alicemarques.dev@hotmail.com)
-
+﻿# 🌍 Travel Share - [Live Travel Share](https://travelshare-fdajbpaygsbhd8bf.brazilsouth-01.azurewebsites.net/)
+ 
 ![TravelShare](assets/travel-share.png)
 
 TravelShare é uma rede social desenvolvida em ASP.NET Core MVC, focada no compartilhamento
@@ -8,74 +7,92 @@ de experiências de viagem. A plataforma permite que os usuários registrem e ex
 que já visitaram através de um mapa interativo, integrado com a Google Maps API.
 O sistema oferece funcionalidades essenciais para interação social, como postagens, curtidas,
 comentários, seguidores e notificações, além de uma aba Explorar, onde os usuários podem descobrir publicações de outras pessoas.
-Com uma interface intuitiva e um sistema de controle de acesso seguro, TravelShare proporciona uma 
-experiência envolvente para quem deseja compartilhar e acompanhar histórias de viagem ao redor do mundo.
 
 ## Principais Funcionalidades
-- **Gerenciamento**: Permite o gerenciamento de usuário, posts, curtidas, comentários, seguidores e notificações, garantindo um fluxo dinâmico de compartilhamento de experiências de viagem.
-- **Sistema de Login**: Autenticação segura baseada em cookies, garantindo acesso autorizado à plataforma.
-- **Redefinição de Senha via Email (SMTP)**: Envio de email para redefinição de senha.
-- **Alteração de Senha**: Permite que o usuário altere sua senha, validando a senha atual e garantindo critérios de segurança.
-- **Filtros de Autorização**: Controle de acesso para garantir que apenas usuários autenticados possam interagir com postagens e visualizar informações restritas.
-- **Segurança**: Proteção contra ataques como XSS e CSRF, garantindo um ambiente seguro.
-- **MongoDB Driver**: Utilização do MongoDB Driver para interação com o banco de dados NoSQL MongoDB, garantindo escalabilidade e flexibilidade na manipulação de dados.
-- **Proteção de Senha**: Criptografia de senhas para armazenamento seguro.
-- **Sessão do Usuário**: Gerenciamento seguro da sessão do usuário, garantindo persistência da autenticação durante a navegação.
-- **Logs de Atividade do Usuário**: Registro de atividades do usuário para monitoramento e diagnóstico do sistema.
-- **Integração com Google Maps API**: Exibição de um mapa interativo com os locais visitados pelos usuários, utilizando as APIs do Google Maps para visualização dinâmica dos destinos.
-- **Pesquisa de Cidades com Google Places API**: Autocomplete para busca de cidades, permitindo que os usuários selecionem locais de forma rápida e precisa ao adicionar novas viagens.
+
+👥 Gerenciamento completo: Usuários, postagens, curtidas, comentários, seguidores e notificações.
+
+🔐 Autenticação segura: Login com cookies e filtros de autorização.
+
+📧 Recuperação de senha via e-mail (SMTP): Envio de link para redefinição com validação segura.
+
+🔄 Alteração de senha: Validação da senha atual e critérios de segurança.
+
+🛡️ Segurança reforçada: Proteção contra ataques XSS e CSRF.
+
+🗂️ MongoDB Driver: Interação com banco de dados NoSQL, garantindo escalabilidade.
+
+🔒 Criptografia de senhas: Armazenamento seguro de credenciais.
+
+🧠 Sessão do usuário: Autenticação persistente durante a navegação.
+
+📋 Logs de atividades: Monitoramento e diagnóstico com Serilog.
+
+🌍 Mapa interativo com Google Maps API: Visualização dos destinos visitados.
+
+🏙️ Autocomplete com Google Places API: Busca inteligente de cidades para adicionar viagens.
 
 ## Tecnologias Usadas
 
-### **Back-End**
-C# | ASP.NET Core MVC | MongoDB
+### Back-End
+![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 
-### **Front-End**
-HTML | CSS | Bootstrap | jQuery | JavaScript
+### Front-End
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![jQuery](https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white)
 
 ### Integrações e Serviços
-- **Google Maps API** – Autocomplete para endereço nos locais visitados e exibição de mapa interativo.
-- **SMTP** – Envio de emails para redefinição de senha
-- **Serilog** – Registro de logs e atividades
+- 🔍 **Google Maps API** – Autocomplete e mapa interativo
+- 📧 **SMTP** – Envio de e-mails para redefinição de senha
+- 📜 **Serilog** – Registro de logs e monitoramento de atividades
 
 ## Instalação
 
-### **Pré-Requisitos**
 
-Antes de rodar o projeto, é necessário ter as seguintes ferramentas instaladas:
+### ✅ Pré-requisitos
 
-- **Visual Studio 2022 ou superior** com o suporte para **ASP.NET Core e .NET 8.0**.
-- **.NET SDK 8.0** (necessário para compilar o projeto).
-- **SQL Server** (necessário para o banco de dados relacional).
-- Compátivel com **Windows** | **macOS** | **Linux**.
-- Conta no Google Cloud – Para Integração com APIs do Google
+Antes de rodar o projeto, você precisa ter:
 
+- [Visual Studio 2022+](https://visualstudio.microsoft.com/) com suporte a **ASP.NET Core e .NET 8**
+- [.NET SDK 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- [MongoDB](https://www.mongodb.com/try/download/community) instalado e rodando localmente
+- [MongoDB Compass](https://www.mongodb.com/products/compass) (opcional, para visualização do banco)
+- Conta no [Google Cloud](https://console.cloud.google.com/) para uso das APIs (Maps e Places)
+- Compatível com: **Windows**, **macOS** e **Linux**
 
-### **Passo a Passo para Executar o Projeto Localmente**
+---
 
-1. **Clonar o Repositório**  
-   Primeiro, você precisa clonar o repositório do projeto para sua máquina local. Utilize o Git para isso:
+### 🧩 Passo a passo
+
+#### 1️⃣ Clone o repositório
 
 ```bash
 git clone https://github.com/alicemarquesdev/TravelShare.git
 ```
 
-2. **Instalar as Dependências do Projeto**
-
-Execute o comando abaixo para restaurar pacotes NuGet
+2️⃣ Restaure os pacotes NuGet
 
 ```bash
 dotnet restore
 ```
 
-- MongoDB.Driver(3.3.0) | Newtonsoft.Json (13.0.3) | Serilog (4.2.0) | Serilog.AspNetCore (9.0.0) | Serilog.Sinks.Console (6.0.0) |
-Serilog.Sinks.File (6.0.0) | SixLabors.ImageSharp
+Pacotes NuGet utilizados:
 
-3. **Configuração appsettings**
-Verifique se você possui um arquivo appsettings.json com as configurações corretas para o banco de dados e outras variáveis.
-Certifique-se de ter o SQL Server instalado e configurado. Crie um banco de dados para o projeto e configure a string de conexão no arquivo.
-Configure também as credenciais SMTP.
-Exemplo de configuração:
+- MongoDB.Driver (3.3.0)
+- Newtonsoft.Json (13.0.3)
+- Serilog (4.2.0)
+- Serilog.AspNetCore (9.0.0)
+- Serilog.Sinks.Console (6.0.0)
+- Serilog.Sinks.File (6.0.0)
+- SixLabors.ImageSharp
+
+3️⃣ Configure o appsettings.json
+Crie ou edite o arquivo appsettings.json com suas informações de conexão, API e SMTP:
 
 ```bash
 {
@@ -109,7 +126,7 @@ Exemplo de configuração:
     "ApiKey": "SuaAPIKey"
   },
   "EmailSettings": {
-    "SmtpServer": "smtp.gmail.com", // utilizando gmail
+    "SmtpServer": "smtp.gmail.com", 
     "SmtpPort": 587,
     "SenderEmail": "seuemail@dominio.com",
     "SenderPassword": "suasenha"
@@ -118,12 +135,18 @@ Exemplo de configuração:
 }
 ```
 
-4. **Executar o Projeto**
-Clique em Run ou Iniciar sem Depuração (F5) para rodar o servidor localmente. O projeto será executado no navegador padrão.
+4️⃣ Execute o projeto
+No Visual Studio, clique em Iniciar (F5) ou use: 
+```bash
+dotnet run
+```
 
-5. **Verificação**
-Após a execução, o projeto estará disponível em http://localhost:5000 (ou a porta configurada no launchSettings.json). 
-Verifique se o sistema está funcionando conforme esperado.
+5️⃣ Acesse no navegador
+O projeto estará disponível em:
+```bash
+http://localhost:5000
+```
+Ou a porta definida no launchSettings.json.
 
 ## Licença
 
@@ -131,11 +154,9 @@ Este projeto está licenciado sob a Licença MIT. Veja o arquivo [LICENSE.md](LI
 
 ## Contato
 
-Você pode entrar em contato comigo através do e-mail [alicemarques.dev@hotmail.com](mailto:alicemarques.dev@hotmail.com).
-
-Link do Projeto: [GitHub - Travel Share](https://github.com/alicemarquesdev/TravelShare.git)
-
-
+🔗[**LinkedIn**](https://linkedin.com/in/alicemarquesdev)  |
+ 📧 [**E-mail**](mailto:alicemarques.dev@hotmail.com)  |
+🌐 [**Portfólio**](https://alicemarquesdev.github.io/portfolio-AM/) 
 
 
 
