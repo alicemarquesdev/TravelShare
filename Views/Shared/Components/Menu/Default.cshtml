@@ -1,0 +1,70 @@
+﻿@model UsuarioModel
+
+<nav class="navbar bg-white fixed-left d-lg-flex d-none border border-1 border-dark" id="sideNav" style="height: 100vh; width: 250px; padding-top: 20px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+    <h3 class="text-dark text-center mb-4">TravelShare</h3>
+
+    <ul class="navbar-nav flex-column text-start w-100 ps-4 pt-5 mt-3">
+        <li class="nav-item mb-3">
+            <a class="nav-link d-flex align-items-center justify-content-start" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-house-door-fill fs-4 me-2"></i>
+                <span>Página Inicial</span>
+            </a>
+        </li>
+        <li class="nav-item mb-3">
+            <a class="nav-link d-flex align-items-center justify-content-start" asp-controller="Home" asp-action="Explorar" asp-route-id="@Model.Id">
+                <i class="bi bi-compass fs-4 me-2"></i>
+                <span>Explorar</span>
+            </a>
+        </li>
+        <li class="nav-item mb-3">
+            <a class="nav-link d-flex align-items-center justify-content-start" asp-controller="Home" asp-action="Notificacoes" asp-route-id="@Model.Id">
+                <i class="bi bi-heart fs-4 me-2"></i>
+                <span>Notificações</span>
+            </a>
+        </li>
+        <li class="nav-item mb-3">
+            <a class="nav-link d-flex align-items-center justify-content-start" asp-controller="Post" asp-action="CriarPost">
+                <i class="bi bi-plus-square fs-4 me-2"></i>
+                <span>Criar</span>
+            </a>
+        </li>
+        <li class="nav-item mb-3">
+            <a class="nav-link d-flex align-items-center justify-content-start" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@Model.Id">
+                <img src="@Url.Content(Model.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle border border-1 border-dark me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                <span>@Model.Nome</span>
+            </a>
+        </li>
+        <li class="nav-item mb-3">
+            <div class="dropup text-center">
+                <a class="text-decoration-none fw-bold text-secondary d-flex align-items-center justify-content-start" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-list fs-3 me-2"></i> <span>MAIS</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    <li><a class="dropdown-item fw-bold text-secondary" asp-controller="Usuario" asp-action="EditarPerfil">Editar Perfil</a></li>
+                    <li><a class="dropdown-item fw-bold text-secondary" asp-controller="Login" asp-action="Sair">Sair</a></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+</nav>
+
+
+<!-- Para telas pequenas, no css ajusta para mostrar a sidebar como topbar. -->
+<nav class="navbar bg-white d-lg-none d-flex justify-content-between align-items-center pt-0 px-3 border-bottom border-1 border-dark" id="topNav">
+    <h3 class="text-dark">TravelShare</h3>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavMenu" aria-controls="topNavMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="bi bi-list fs-3"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="topNavMenu">
+        <ul class="navbar-nav w-100 text-center mt-3">
+            <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Página Inicial</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Explorar" asp-route-id="@Model.Id">Explorar</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Notificacoes" asp-route-id="@Model.Id">Notificações</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Post" asp-action="CriarPost">Criar</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@Model.Id">Perfil</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Usuario" asp-action="EditarPerfil">Editar Perfil</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Login" asp-action="Sair">Sair</a></li>
+        </ul>
+    </div>
+</nav>
+

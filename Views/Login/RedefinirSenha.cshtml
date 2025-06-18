@@ -1,0 +1,43 @@
+﻿@model RedefinirSenhaModel
+@{
+    Layout = "_LayoutDeslogado"; // Define o layout utilizado para a página, no caso, o layout para usuários deslogados.
+}
+
+<div class="container">
+    <!-- Container principal para centralizar o conteúdo da página -->
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <!-- Card que irá conter o formulário de redefinição de senha -->
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header">
+                    <!-- Título da página -->
+                    <h3 class="text-center font-weight-light my-4">Redefinir Senha</h3>
+                </div>
+                <div class="card-body">
+                    <div class="small mb-3 text-muted">
+                        <!-- Texto explicativo sobre o que o usuário precisa fazer -->
+                        Digite seu endereço de e-mail e nós enviaremos um link para redefinir sua senha.
+                    </div>
+                    <!-- Formulário para o envio do e-mail para redefinir a senha -->
+                    <form asp-controller="Login" asp-action="EnviarLinkParaRedefinirSenha" method="post">
+                        <div class="form-floating mb-3">
+                            <!-- Campo para o e-mail do usuário -->
+                            <input class="form-control" id="Email" name="email" type="email" asp-for="Email" />
+                            <label for="inputEmail">Digite seu Email</label>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                            <!-- Link para redirecionar para a página de login -->
+                            <a class="small" asp-controller="Login" asp-action="Login">Efetuar Login.</a>
+                            <!-- Botão de envio para solicitar o link de redefinição de senha -->
+                            <button type="submit" class="btn btn-dark">Enviar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <!-- Link para redirecionar para a página de criação de conta -->
+                    <div class="small"><a asp-controller="Login" asp-action="CriarConta">Não tem uma conta? Crie uma conta!</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

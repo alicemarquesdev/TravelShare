@@ -1,0 +1,67 @@
+﻿@model AlterarSenhaModel
+
+<!-- Container principal da página de alteração de senha -->
+<div class="container">
+    <!-- Linha de layout centralizada para melhor apresentação -->
+    <div class="row justify-content-center">
+        <!-- Coluna com tamanho ajustado para exibir o conteúdo de forma centralizada -->
+        <div class="col-lg-5">
+            <!-- Card que envolve o conteúdo do formulário, com bordas arredondadas e sombra para melhorar a aparência -->
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <!-- Cabeçalho do card, exibindo o título da página -->
+                <div class="card-header"><h3 class="text-center font-weight-light my-4">Alterar Senha</h3></div>
+                <div class="card-body">
+                    <!-- Formulário para enviar a solicitação de alteração de senha -->
+                    <form asp-controller="AlterarSenha" asp-action="AlterarSenha" method="post">
+                        <!-- Campo oculto que envia o ID do usuário para garantir que a alteração seja feita no usuário correto -->
+                        <input type="hidden" asp-for="Id" value="@Model.Id" />
+
+                        <!-- Campo para o usuário inserir a senha atual -->
+                        <div class="form-floating mb-3">
+                            <!-- Input para a senha atual -->
+                            <input class="form-control" asp-for="SenhaAtual" type="password" />
+                            <!-- Rótulo do campo de senha atual -->
+                            <label for="SenhaAtual">Senha Atual</label>
+                            <!-- Exibição de mensagens de erro de validação, se houver -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.SenhaAtual)</span>
+                        </div>
+
+                        <!-- Campo para o usuário inserir a nova senha -->
+                        <div class="form-floating mb-3">
+                            <!-- Input para a nova senha -->
+                            <input class="form-control" asp-for="NovaSenha" type="password" id="Senha" />
+                            <!-- Rótulo do campo de nova senha -->
+                            <label for="NovaSenha">Nova Senha</label>
+                            <!-- Exibição de mensagens de erro de validação, se houver -->
+                            <span id="senhaErro" class="text-danger">@Html.ValidationMessageFor(x => x.NovaSenha)</span>
+                        </div>
+
+                        <!-- Campo para o usuário confirmar a nova senha -->
+                        <div class="form-floating mb-3">
+                            <!-- Input para confirmar a nova senha -->
+                            <input class="form-control" asp-for="NovaSenhaConfirmacao" type="password" />
+                            <!-- Rótulo do campo de confirmação da nova senha -->
+                            <label for="NovaSenhaConfirmacao">Confirmar Nova Senha</label>
+                            <!-- Exibição de mensagens de erro de validação, se houver -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.NovaSenhaConfirmacao)</span>
+                        </div>
+
+                        <!-- Botão para enviar o formulário e alterar a senha -->
+                        <div class="d-flex justify-content-end mt-4 mb-0">
+                            <button type="submit" class="btn btn-dark">Alterar Senha</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- Rodapé do card com um link para voltar ao perfil do usuário -->
+                <div class="card-footer text-center py-3">
+                    <!-- Link para retornar à página de edição de perfil -->
+                    <div class="small"><a class="text-dark" asp-controller="Usuario" asp-action="EditarPerfil">Voltar</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/js/validacao-senha.js"></script>
+}

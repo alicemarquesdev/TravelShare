@@ -1,0 +1,137 @@
+﻿@model PostModel
+
+<div class="container-fluid mt-5 py-xxl-5">
+    <!-- Container principal com margem superior e espaçamento interno adicional -->
+
+    <div class="row justify-content-center">
+        <!-- Row centralizada para alinhar o conteúdo -->
+
+        <div class="col-md-8">
+            <!-- Coluna que ocupa 8 unidades em telas médias (md) -->
+
+            <div class="card shadow-lg">
+                <!-- Cartão com sombra para destacar a seção -->
+
+                <div class="card-header text-white text-center">
+                    <!-- Cabeçalho do cartão com texto branco e centralizado -->
+                    <h3>Editar Post</h3>
+                    <!-- Título indicando que o post será editado -->
+                </div>
+
+                <div class="card-body pt-4">
+                    <!-- Corpo do cartão com preenchimento superior -->
+
+                    <form asp-controller="Post" asp-action="EditarPost" method="post" enctype="multipart/form-data">
+                        <!-- Formulário para enviar dados ao método EditarPost via POST, com suporte para envio de arquivos -->
+                        <!-- Campo oculto com ID do Post, usado para identificar o post a ser editado -->
+                        <input type="hidden" asp-for="Id" />
+
+                        <!-- Campo oculto para o ID do Usuário associado ao post, necessário para verificar o proprietário do post -->
+                        <input type="hidden" asp-for="UsuarioId" value="@Model.UsuarioId" />
+
+                        <!-- Campo oculto para a imagem do post, se necessário para manter o controle da imagem associada -->
+                        <input type="hidden" asp-for="ImagemPost" />
+
+                        <!-- Input de Localização -->
+                        <div class="form-floating mb-3">
+                            <!-- Campo de input flutuante para a localização -->
+                            <input type="text" class="form-control cities-autocomplete" id="cities-autocomplete" asp-for="Localizacao">
+                            <!-- Campo de texto para o usuário inserir a localização, com a classe para autocomplete -->
+                            <label for="Localizacao">Localização</label>
+                            <!-- Label associada ao campo de localização -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Localizacao) </span>
+                            <!-- Exibe a mensagem de erro, caso a validação falhe -->
+                        </div>
+
+                        <!-- Input de Legenda -->
+                        <div class="form-floating mb-3">
+                            <!-- Campo de input flutuante para a legenda -->
+                            <textarea type="text" class="form-control" asp-for="Legenda" rows="4"></textarea>
+                            <!-- Textarea para a legenda do post, com 4 linhas de altura -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Legenda) </span>
+                            <!-- Exibe a mensagem de erro, caso a validação falhe -->
+                            <label for="Legenda">Legenda</label>
+                            <!-- Label associada ao campo de legenda -->
+                        </div>
+
+                        <!-- Botão de salvar alterações -->
+                        <div class="text-center">
+                            <!-- Alinhamento centralizado para o botão -->
+                            <button type="submit" class="btn btn-dark btn-md w-100">Salvar Alterações</button>
+                            <!-- Botão de submit que envia os dados do formulário -->
+                        </div>
+                    </form>
+
+                    <!-- Botão para abrir o modal de confirmação de exclusão -->
+                    <div class="text-center mt-2">
+                        <!-- Alinhamento centralizado para o botão -->
+                        <button type="button" class="btn btn-dark w-100" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-id="@Model.Id">
+                            <!-- Botão para acionar o modal de exclusão -->
+                            <i class="bi bi-trash"></i> Excluir Post
+                            <!-- Ícone de lixeira e texto de exclusão -->
+                        </button>
+                    </div>
+
+                    <!-- Link para voltar ao perfil do usuário -->
+                    <a class="btn btn-outline-dark w-100 mt-2" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@Model.UsuarioId"> Voltar</a>
+                    <!-- Link para retornar à página de perfil do usuário -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <!-- Modal com animação de fade (transparência) -->
+
+    <div class="modal-dialog modal-dialog-centered">
+        <!-- Diálogo modal centralizado na tela -->
+
+        <div class="modal-content">
+            <!-- Conteúdo do modal -->
+
+            <div class="modal-header">
+                <!-- Cabeçalho do modal -->
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                <!-- Título indicando que é a confirmação para excluir o post -->
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Botão para fechar o modal -->
+            </div>
+
+            <div class="modal-body">
+                <!-- Corpo do modal -->
+                Tem certeza de que deseja excluir este post? Esta ação não poderá ser desfeita.
+                <!-- Mensagem de confirmação sobre a exclusão do post -->
+            </div>
+
+            <div class="modal-footer">
+                <!-- Rodapé do modal -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <!-- Botão para cancelar e fechar o modal -->
+
+                <form asp-controller="Post" asp-action="DeletarPost" method="post">
+                    <!-- Formulário para excluir o post via POST -->
+
+                    <input type="hidden" asp-for="Id" name="id" value="@Model.Id" />
+                    <!-- Campo oculto com o ID do post, necessário para identificar qual post excluir -->
+
+                    <button type="submit" class="btn btn-dark">Excluir</button>
+                    <!-- Botão para confirmar a exclusão do post -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const apiKey = '@ViewBag.GoogleApiKey';  // Acessando a chave via ViewBag
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+    </script>
+    <script src="~/js/googleApi.js"></script>
+}

@@ -1,0 +1,69 @@
+﻿@model List<NotificacaoModel>
+
+<div class="col-12 col-md-8 mx-auto">
+    <!-- Card de Notificações -->
+    <div class="card" style="position: sticky; top: 0; z-index: 100; min-height: 80px; max-height: 600px; overflow-y: auto;">
+        <!-- Cabeçalho do Card de Notificações -->
+        <div class="card-header text-center">
+            <h4 class="m-0">Notificações</h4> <!-- Título da página -->
+        </div>
+        
+        <ul class="list-group">
+            @if (Model != null && Model.Any())
+            {
+                foreach (var notificacao in Model)
+                {
+                    <li class="list-group-item d-flex align-items-center">
+                        <!-- Link para o perfil do usuário que originou a notificação -->
+                        <a class="text-decoration-none text-dark d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@notificacao.UsuarioOrigemId">
+                            <!-- Imagem de perfil do usuário -->
+                            <img src="@Url.Content(notificacao.UsuarioOrigemModel.ImagemPerfil)" class="rounded-circle" alt="Foto do Perfil" style="width: 60px; height: 60px; object-fit: cover;">
+                            <!-- Nome de usuário -->
+                            <p class="mb-0 ms-3"><strong>@notificacao.UsuarioOrigemModel.Username</strong></p>
+                        </a>
+
+                        <!-- Exibição do tipo de notificação -->
+                        @if (notificacao.Notificacao == NotificacaoEnum.CurtidaPost)
+                        {
+                            <div class="ms-2">
+                                <small class="text-muted">curtiu seu post. - @notificacao.DataCriacao.CalcularTempoDecorrido()</small> <!-- Exibe quando o usuário curtiu o post -->
+                            </div>
+                            <div class="ms-2 ms-auto">
+                                <!-- Imagem do post relacionado à curtida -->
+                                @if (!string.IsNullOrEmpty(notificacao.Post?.ImagemPost?.FirstOrDefault()))
+                                {
+                                    <img src="@Url.Content(notificacao.Post.ImagemPost.First())" alt="Post" width="70" height="70">
+                                }
+                            </div>
+                        }
+                        else if (notificacao.Notificacao == NotificacaoEnum.ComentarioPost)
+                        {
+                            <div class="ms-2">
+                                <small class="text-muted">comentou seu post. - @notificacao.DataCriacao.CalcularTempoDecorrido()</small> <!-- Exibe quando o usuário comentou no post -->
+                            </div>
+                            <div class="ms-2 ms-auto">
+                                <!-- Imagem do post relacionado ao comentário -->
+                                @if (!string.IsNullOrEmpty(notificacao.Post?.ImagemPost?.FirstOrDefault()))
+                                {
+                                    <img src="@Url.Content(notificacao.Post.ImagemPost.First())" alt="Post" width="70" height="70">
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="ms-2">
+                                <small class="text-muted">seguiu você. - @notificacao.DataCriacao.CalcularTempoDecorrido()</small> <!-- Exibe quando o usuário foi seguido -->
+                            </div>
+                        }
+
+                    </li> <!-- Fim do item de notificação -->
+
+                }
+            }
+            else
+            {
+                <li class="list-group-item text-secondary text-center">Nenhuma notificação disponível.</li> <!-- Exibe caso não haja notificações -->
+            }
+        </ul>
+    </div> <!-- Fim do card de notificações -->
+</div>

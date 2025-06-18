@@ -1,0 +1,183 @@
+﻿@model UsuarioSemSenhaModel
+
+<div class="container pt-2 mb-5">
+    <!-- Card Centralizado -->
+    <div class="card mx-auto py-3 px-4" style="max-width: 1000px;">
+        <div class="card-body">
+            <!-- Título -->
+            <h3 class="text-start mb-4">Editar Perfil</h3>
+
+            <!-- Formulário de Edição -->
+            <!-- Formulário principal para editar as informações do perfil do usuário -->
+            <form asp-controller="Usuario" asp-action="EditarPerfil" method="post" enctype="multipart/form-data">
+                <!-- Campo oculto para o ID do usuário -->
+                <input type="hidden" asp-for="Id" value="@Model.Id" />
+
+                <div class="row mb-3">
+                    <!-- Foto do Perfil -->
+                    <div class="col-md-4 text-center">
+                        <!-- Exibição da imagem do perfil com possibilidade de visualização -->
+                        <img id="profileImagePreview" src="@Url.Content(Model.ImagemPerfil)" class="rounded-circle mb-3 border border-3 border-dark" style="width: 200px; height: 200px; object-fit: cover;" alt="Foto do Perfil">
+                        <!-- Campo oculto que mantém a imagem atual do perfil -->
+                        <input type="hidden" name="ImagemAtual" asp-for="ImagemPerfil" value="@Model.ImagemPerfil">
+                        <!-- Input para upload de imagem -->
+                        <input type="file" class="form-control" id="profilePicture" name="imagem" accept="image/png, image/jpeg, image/jpg">
+                    </div>
+
+                    <!-- Nome e Username -->
+                    <div class="col-md-8">
+                        <div class="row">
+                            <!-- Campo para o nome do usuário -->
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="text" class="form-control" asp-for="Nome" required>
+                                <label for="Nome" class="ms-2">Nome</label>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.Nome)</span>
+                            </div>
+                            <!-- Campo para o username do usuário -->
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="text" class="form-control" asp-for="Username" style="text-transform: lowercase;" required>
+                                <label for="Username" class="ms-2">Username</label>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.Username)</span>
+                            </div>
+                        </div>
+
+                        <!-- E-mail e Data de Nascimento -->
+                        <div class="row">
+                            <!-- Campo para o e-mail do usuário -->
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="email" class="form-control" asp-for="Email" style="text-transform: lowercase;" required>
+                                <label for="Email" class="ms-2">E-mail</label>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.Email)</span>
+                            </div>
+                            <!-- Campo para a data de nascimento do usuário -->
+                            <div class="col-md-6 form-floating mb-3">
+                                <input type="date" class="form-control" asp-for="DataNascimento" min="1920-01-01" max="2007-01-01" title="Selecione uma data entre 01/01/1920 e 01/01/2007"  required>
+                                <label for="DataNascimento" class="ms-2">Data de Nascimento</label>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.DataNascimento)</span>
+                            </div>
+                        </div>
+
+                        <!-- Cidade de Nascimento -->
+                        <div class="row">
+                            <div class="form-floating mb-3">
+                                <!-- Input para a cidade de nascimento, com autocomplete para facilitar a busca -->
+                                <input type="text" class="form-control cities-autocomplete" asp-for="CidadeDeNascimento">
+                                <label for="CidadeDeNascimento" class="ms-2">Cidade de Origem</label>
+                                <span class="text-danger">@Html.ValidationMessageFor(x => x.CidadeDeNascimento)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-floating mb-3">
+                    <!-- Campo para a bio do usuário -->
+                    <textarea class="form-control" asp-for="Bio" rows="4"></textarea>
+                    <label for="Bio" class="ps-2">Bio</label>
+                    <span class="text-danger">@Html.ValidationMessageFor(x => x.Bio)</span>
+                </div>
+
+                <!-- Botão de Salvar -->
+                <div class="text-end">
+                    <!-- Botão para salvar as alterações no perfil -->
+                    <button type="submit" class="btn btn-dark w-50">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Seção de Cidades Visitadas -->
+        <div class="row mb-3">
+            <h3 class="text-start mb-3">Editar Cidades Visitadas</h3>
+            <p class="mb-3">
+                <i class="bi bi-pin fs-6"></i> <strong>Número de cidades visitadas: </strong>
+                <!-- Exibição do número de cidades visitadas -->
+                <span id="contadorCidades">@((Model.CidadesVisitadas != null) ? Model.CidadesVisitadas.Count : 0)</span>
+            </p>
+
+            <div id="cidadesLista" style="max-height: 250px; overflow-y: auto;">
+                <!-- Listagem das cidades visitadas -->
+                @if (Model.CidadesVisitadas != null && Model.CidadesVisitadas.Any())
+                {
+                    foreach (var cidade in Model.CidadesVisitadas)
+                    {
+                        <div id="cidade-@cidade" class="cidade-item d-flex align-items-center">
+                            <p class="me-2">@cidade</p>
+                            <!-- Botão para remover cidade da lista -->
+                            @if (cidade != Model.CidadeDeNascimento)
+                            {
+                                <button type="submit" class="border-0 bg-transparent ms-auto removerCidade" data-cidade="@cidade">
+                                    <i class="bi bi-trash text-dark"></i>
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p id="nenhumaCidade">Nenhuma cidade encontrada</p>
+                }
+            </div>
+
+            <!-- Campo de input para adicionar uma nova cidade -->
+            <div class="form-floating mb-3 mt-3">
+                <input type="text" class="form-control cities-autocomplete" id="cidadeInput" name="cidade" />
+                <label for="cidadeInput" class="ms-2">Adicione uma cidade:</label>
+            </div>
+            <!-- Botão para adicionar cidade à lista -->
+            <button id="adicionarCidadeBtn" class="btn btn-dark w-50 ms-auto">Adicionar</button>
+        </div>
+
+        <!-- Configurações da Conta -->
+        <div class="row mb-3 my-2">
+            <h3 class="text-start mb-4">Configurações da Conta</h3>
+            <div class="row mb-3">
+                <div class="col-12 mb-3">
+                    <!-- Botão para alterar senha -->
+                    <a class="btn btn-dark w-100" asp-controller="AlterarSenha" asp-action="AlterarSenha" asp-route-id="@Model.Id">Alterar Senha</a>
+                    <!-- Botão para desativar conta (abre modal de confirmação) -->
+                    <button class="btn btn-dark w-100 mt-2" data-bs-toggle="modal" data-bs-target="#desativarContaModal" data-id="@Model.Id">Excluir Conta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Desativar Conta -->
+<div class="modal fade" id="desativarContaModal" tabindex="-1" aria-labelledby="desativarContaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Título do modal -->
+                <h5 class="modal-title" id="desativarContaModalLabel">Excluir Conta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Mensagem de confirmação para excluir conta -->
+                <p>Tem certeza de que deseja excluir sua conta? Esta ação não pode ser desfeita.</p>
+                <div class="text-center">
+                    <!-- Formulário para excluir conta -->
+                    <form asp-controller="Usuario" asp-action="DeletarConta" method="post">
+                        <input type="hidden" name="id" value="@Model.Id">
+                        <button type="submit" class="btn btn-dark w-100">Desejo excluir minha conta.</button>
+                    </form>
+                    <!-- Botão para cancelar e fechar o modal -->
+                    <button type="button" class="btn btn-secondary mt-1 w-100" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const apiKey = '@ViewBag.GoogleApiKey';  // Acessando a chave via ViewBag
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+    </script>
+    <script src="~/js/googleApi.js"></script>
+    <script src="~/js/cidades-visitadas.js"></script>
+    <script src="~/js/editar-perfil.js"></script>
+}

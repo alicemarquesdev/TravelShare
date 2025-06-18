@@ -1,0 +1,174 @@
+﻿@model HomeViewModel
+
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <!-- Coluna de posts -->
+        <div class="col-12 col-md-8">
+            @if (Model.Posts != null && Model.Posts.Any())
+            {
+                foreach (var post in Model.Posts.Take(25))
+                {
+                    <div class="card mx-auto mb-4" style="max-width: 600px;">
+                        <!-- Cabeçalho do Post -->
+                        <div class="card-header d-flex align-items-center bg-transparent">
+                            <!-- Link para o perfil do usuário -->
+                            <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@post.Usuario.Id">
+                                <!-- Foto de perfil do usuário -->
+                                <img src="@Url.Content(post.Usuario?.ImagemPerfil)" alt="User" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                <div class="ms-2">
+                                    <p class="mb-0"><strong>@post.Usuario?.Nome</strong></p>
+                                    <p class="mb-1">@post.Localizacao</p>
+                                </div>
+                            </a>
+                            <!-- Tempo decorrido da criação do post -->
+                            <p class="mb-0 text-muted ms-auto">@post.DataCriacao.CalcularTempoDecorrido()</p>
+                        </div>
+
+                        <!-- Carrossel de Imagens -->
+                        <div id="carouselExampleIndicators_@post.Id" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach (var imagem in post.ImagemPost.Select((imagem, index) => new { imagem, index }))
+                                {
+                                    <div class="carousel-item @(imagem.index == 0 ? "active" : "")">
+                                        <img src="@Url.Content(imagem.imagem)" class="d-block w-100" alt="Imagem @imagem.index" style="width: 450px; height: 450px; object-fit: cover;">
+                                    </div>
+                                }
+                            </div>
+                            @if(post.ImagemPost.Count > 1)
+                            {
+                                <!-- Controles do Carrossel -->
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators_@post.Id" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            }
+                          
+                        </div>
+
+                        <!-- Corpo do Post -->
+                        <div class="border-top p-3">
+                            <!-- Botão de Curtida -->
+                            <div class="d-flex align-items-center mb-2">
+                                <form class="d-inline">
+                                    <input type="hidden" name="postId" value="@post.Id" />
+                                    <button type="button"
+                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogado.Id) ? "text-danger" : "text-secondary")"
+                                            data-post-id="@post.Id">
+                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogado.Id) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                    </button>
+                                </form>
+                                <!-- Exibição da quantidade de curtidas -->
+                                <span class="ms-2 curtidas-contador" data-post-id="@post.Id">
+                                    @post.Curtidas?.Count curtidas
+                                </span>
+                                <i class="bi bi-chat fs-5 ms-2"></i>
+                                <!-- Exibição da quantidade de comentários -->
+                                <span class="ms-2">@post.Comentarios.Count comentários</span>
+                            </div>
+
+                            <!-- Legenda do Post -->
+                            <div>
+                                <p><strong>@post.Usuario?.Username</strong> @post.Legenda</p>
+                            </div>
+
+                            <!-- Área de Comentários -->
+                            <div class="card-footer bg-transparent">
+                                <div class="comentariosLista mt-1" data-post-id="@post.Id" style="max-height: 150px; overflow-y: auto;">
+                                    @if (post.Comentarios != null && post.Comentarios.Any())
+                                    {
+                                        @foreach (var comentario in post.Comentarios)
+                                        {
+                                            <div id="comentario-@comentario.Id" class="mb-2 d-flex align-items-center">
+                                                <p class="mb-0"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
+                                                <div class="ms-auto">
+                                                    <!-- Botão de exclusão de comentário (visível apenas para o dono do post ou do comentário) -->
+                                                    @if (Model.UsuarioLogado.Id == post.UsuarioId || comentario.UsuarioId == Model.UsuarioLogado.Id)
+                                                    {
+                                                        <form class="deleteComentarioForm" method="post">
+                                                            <input type="hidden" name="id" value="@comentario.Id" />
+                                                            <button type="submit" class="border-0 bg-transparent">
+                                                                <i class="bi bi-trash text-secondary"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Formulário para Adicionar Comentário -->
+                            <form class="addComentarioForm d-flex">
+                                <input type="hidden" name="postId" value="@post.Id" />
+                                <div class="input-group">
+                                    <span class="input-group-text text-secondary"><i class="bi bi-chat"></i></span>
+                                    <input type="text" name="comentario" class="form-control" placeholder="Adicionar um comentário..." maxlength="100" required />
+                                    <button type="submit" class="btn btn-dark">Publicar</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Caso não haja posts, exibe mensagem -->
+                <p class="text-center">Nenhum post publicado.</p>
+            }
+        </div>
+
+        <!-- Coluna de Sugestões -->
+        <div class="col-12 col-md-4">
+            <div class="card" style="position: sticky; top: 0; z-index: 100;">
+                <!-- Header de Sugestões -->
+                <div class="card-header">
+                    <h5 class="m-0">Sugestões para seguir</h5>
+                </div>
+                <ul class="list-group">
+
+                    @if (Model.UsuariosSugestoes != null && Model.UsuariosSugestoes.Any())
+                    {
+                        @foreach (var sugestao in Model.UsuariosSugestoes.Take(6))
+                        {
+                            <li class="list-group-item text-secondary d-flex align-items-center">
+                                <!-- Link para o perfil do usuário sugerido -->
+                                <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@sugestao.Id">
+                                    <img src="@Url.Content(sugestao.ImagemPerfil)" class="rounded-circle" alt="Foto do Perfil" style="width: 30px; height: 30px; object-fit: cover;">
+                                    <div class="ms-2">
+                                        <p class="mb-0"><strong>@sugestao.Nome</strong></p>
+                                    </div>
+                                </a>
+                                <div class="ms-auto">
+                                    <!-- Formulário para seguir/desseguir -->
+                                    <form class="seguirOuDeseguirForm" data-seguindo-id="@sugestao.Id" data-usuario-id="@Model.UsuarioLogado.Id" method="post">
+
+                                        @if (Model.UsuarioLogado.Seguindo != null && Model.UsuarioLogado.Seguindo.Contains(sugestao.Id))
+                                        {
+                                            <button type="submit" class="btn btn-small btn-outline-dark"> Seguindo </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-small btn-dark"> Seguir </button>
+                                        }
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Caso não haja sugestões, exibe mensagem -->
+                        <li class="list-group-item text-secondary">Nenhuma sugestão disponível.</li>
+                    }
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

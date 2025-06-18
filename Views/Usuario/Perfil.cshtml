@@ -1,0 +1,330 @@
+﻿@model UsuarioViewModel
+
+<div class="container mt-3">
+    <div class="d-flex flex-column flex-lg-row mb-4 position-relative">
+        <!-- Foto de Perfil -->
+        <div class="mx-4 mb-3 mb-lg-0 d-flex justify-content-center">
+            <img src="@Url.Content(Model.UsuarioPerfil?.ImagemPerfil)" class="rounded-circle border border-2 border-dark" alt="Foto do Perfil" style="width: 200px; height: 200px; object-fit: cover;">
+        </div>
+
+        <!-- Informações do Usuário -->
+        <div class="mb-1 w-100 text-center text-lg-start">
+            <div class="d-flex align-items-center mb-0 justify-content-center justify-content-lg-start">
+                <!-- Nome do Usuário -->
+                <h3 class="mb-0">@Model.UsuarioPerfil?.Nome</h3>
+            </div>
+            <p class="fw-bold mb-2">@@@Model.UsuarioPerfil?.Username</p>
+            <div class="d-flex gap-3 mb-2 align-items-center justify-content-center justify-content-lg-start">
+                <!-- Link para exibir posts do usuário -->
+                <a class="text-decoration-none text-secondary" href="#postsSection"><strong>@Model.Posts.Count</strong> posts</a>
+
+                <!-- Botões que abrem os modais de Seguidores e Seguindo -->
+                <button class="btn btn-link text-decoration-none text-secondary px-0" data-bs-toggle="modal" data-bs-target="#seguidoresModal">
+                    <strong>@Model.UsuarioPerfil?.Seguidores.Count</strong> seguidores
+                </button>
+                <button class="btn btn-link text-decoration-none text-secondary px-0" data-bs-toggle="modal" data-bs-target="#seguindoModal">
+                    <strong>@Model.UsuarioPerfil?.Seguindo.Count</strong> seguindo
+                </button>
+                <span><strong>@Model.UsuarioPerfil?.CidadesVisitadas.Count</strong> cidades no mapa</span>
+            </div>
+
+            <p class="mb-1">
+                <i class="bi bi-geo-alt"></i> @Model.UsuarioPerfil?.CidadeDeNascimento
+            </p>
+            <p class="mb-2">@Model.UsuarioPerfil?.Bio</p>
+        </div>
+
+        <!-- Botão para editar perfil, visível apenas para o usuário logado -->
+        @if (Model.PerfilDoUsuarioLogado)
+        {
+            <div class="position-absolute top-0 end-0 mt-3 me-2 d-flex">
+                <a class="btn btn-outline-dark" asp-controller="Usuario" asp-action="EditarPerfil">
+                    <i class="bi bi-pencil p-1">  Perfil</i>
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Formulário para seguir ou deixar de seguir o usuário -->
+            <div class="d-flex mt-3 ms-5 justify-content-center justify-content-lg-start">
+                <form asp-antiforgery="true" class="seguirOuDeseguirForm" data-seguindo-id="@Model.UsuarioPerfil?.Id.ToString()" data-usuario-id="@Model.UsuarioLogadoId" method="post">
+                    @if (Model.UsuarioPerfil?.Seguidores == null || !Model.UsuarioPerfil.Seguidores.Contains(Model.UsuarioLogadoId))
+                    {
+                        <button type="submit" class="btn btn-dark"> Seguir </button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-outline-dark"> Seguindo </button>
+                    }
+                </form>
+            </div>
+        }
+    </div>
+
+
+    <!-- Mapa (Atualmente oculto com display:none) -->
+    <div class="container mt-2 mb-3 d-flex justify-content-center border-top border-bottom border-dark" style="display:none;">
+        <div class="m-3" id="map" style="height: 350px; width: 90%;"></div>
+        <div id="dadosCidades" data-cidades='@Json.Serialize(Model.UsuarioPerfil?.CidadesVisitadas)'></div>
+    </div>
+
+    <!-- Feed de Posts -->
+    <div class="row g-3 pb-5 mx-3" id="postsSection">
+        @if (Model.Posts != null && Model.Posts.Any())
+        {
+            foreach (var post in Model.Posts)
+            {
+                <div class="col-6 col-md-4">
+                    <div class="position-relative">
+                        <!-- Imagem do post, que abre o modal de detalhes do post -->
+                        <img src="@Url.Content(post.ImagemPost.FirstOrDefault())"
+                             class="img-fluid rounded"
+                             alt="Imagem do Post"
+                             style="object-fit: cover; width: 100%; height: 350px;"
+                             data-bs-toggle="modal"
+                             data-bs-target="#postModal_@post.Id">
+                    </div>
+                </div>
+
+                <!-- Modal do Post (Com carrossel de imagens e interações) -->
+                <div class="modal fade" id="postModal_@post.Id" tabindex="-1" aria-labelledby="postModalLabel_@post.Id" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-body p-0">
+                                <div class="row g-0">
+                                    <!-- Carrossel de imagens do post -->
+                                    <div class="col-md-7">
+                                        <div id="carouselPostImages_@post.Id" class="carousel slide" data-bs-ride="carousel">
+                                            <div class="carousel-inner">
+                                                @foreach (var imagem in post.ImagemPost)
+                                                {
+                                                    <div class="carousel-item @(imagem == post.ImagemPost.First() ? "active" : "")">
+                                                        <img src="@Url.Content(imagem)" class="d-block w-100" alt="Imagem do Post" style="height:600px; width:600px; object-fit: cover;">
+                                                    </div>
+                                                }
+                                            </div>
+                                            <!-- Controles do carrossel -->
+                                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Anterior</span>
+                                            </button>
+                                            <button class="carousel-control-next" type="button" data-bs-target="#carouselPostImages_@post.Id" data-bs-slide="next">
+                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Próximo</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Informações do post e interações -->
+                                    <div class="col-md-5 d-flex flex-column">
+                                        <!-- Header do post (foto de perfil do usuário, nome e localização) -->
+                                        <div class="d-flex align-items-center border-bottom p-3">
+                                            <img src="@Url.Content(Model.UsuarioPerfil?.ImagemPerfil)" alt="Foto de Perfil" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                            <div class="ms-3 d-flex flex-column gap-0 text-dark">
+                                                <h5 class="fw-bold m-0">@post.Usuario.Nome</h5>
+                                                <p class="m-0">@post.Localizacao</p>
+                                                <small>@post.DataCriacao.CalcularTempoDecorrido()</small>
+                                            </div>
+                                            <div class="ms-auto">
+                                                @if (Model.PerfilDoUsuarioLogado)
+                                                {
+                                                    <!-- Botão para editar o post (visível apenas para o autor do post) -->
+                                                    <a class="btn btn-outline-dark btn-sm ms-auto" asp-controller="Post" asp-action="EditarPost" asp-route-id="@post.Id"><i class="bi bi-pencil"> Editar</i></a>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Legenda do post e lista de comentários -->
+                                        <div class="flex-grow-1 p-3 overflow-auto">
+                                            <div>
+                                                <p class="mb-1"><strong>@Model.UsuarioPerfil?.Username</strong> @post.Legenda</p>
+                                            </div>
+
+                                            <!-- Comentários do post -->
+                                            <div class="comentariosLista mt-3" data-post-id="@post.Id" style="max-height: 320px; overflow-y: auto; word-wrap: break-word;">
+                                                @if (post.Comentarios.Any())
+                                                {
+                                                    foreach (var comentario in post.Comentarios)
+                                                    {
+                                                        <div id="comentario-@comentario.Id" class="mb-2" style="position: relative;">
+                                                            <p class="mb-0 ps-2" style="white-space: pre-wrap;"><strong>@comentario.UsuarioUsername</strong> @comentario.Comentario</p>
+
+                                                            <!-- Botão para excluir comentário, visível apenas para o autor ou o usuário logado -->
+                                                            @if (Model.PerfilDoUsuarioLogado || comentario.UsuarioId == Model.UsuarioLogadoId)
+                                                            {
+                                                                <form asp-antiforgery="true" class="deleteComentarioForm" method="post" style="position: absolute; top: 0; right: 0;">
+                                                                    <input type="hidden" name="id" value="@comentario.Id" />
+                                                                    <button type="submit" class="border-0 bg-transparent">
+                                                                        <i class="bi bi-trash text-secondary"></i>
+                                                                    </button>
+                                                                </form>
+                                                            }
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Área de Interações (Curtir, comentar) -->
+                                        <div class="border-top p-3">
+                                            <!-- Botão de curtida -->
+                                            <div class="d-flex align-items-center mb-3">
+                                                <form class="d-inline">
+                                                    <input type="hidden" name="postId" value="@post.Id" />
+                                                    <button type="button"
+                                                            class="btn p-0 curtida-btn @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogadoId) ? "text-danger" : "text-secondary")"
+                                                            data-post-id="@post.Id">
+                                                        <i class="bi @(post.Curtidas != null && post.Curtidas.Contains(Model.UsuarioLogadoId) ? "bi-heart-fill fs-4" : "bi-heart fs-5")"></i>
+                                                    </button>
+                                                </form>
+                                                <!-- Exibição da quantidade de curtidas -->
+                                                <span class="ms-2 curtidas-contador" data-post-id="@post.Id">
+                                                    @post.Curtidas?.Count curtidas
+                                                </span>
+                                                <i class="bi bi-chat fs-5 ms-2"></i>
+                                                <!-- Exibição da quantidade de comentários -->
+                                                <span class="ms-2">@post.Comentarios.Count comentários</span>
+                                            </div>
+
+                                            <!-- Caixa de comentário -->
+                                            <form class="addComentarioForm d-flex">
+                                                <input type="hidden" name="postId" value="@post.Id" />
+                                                <div class="input-group">
+                                                    <span class="input-group-text text-secondary"><i class="bi bi-chat"></i></span>
+                                                    <input type="text" name="comentario" class="form-control" placeholder="Adicionar um comentário..." maxlength="100" required />
+                                                    <button type="submit" class="btn btn-outline-dark btn-sm">Comentar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Modal Seguidores -->
+<div class="modal fade" id="seguidoresModal" tabindex="-1" aria-labelledby="seguidoresModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="seguidoresModalLabel">Lista de Seguidores</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    @if (Model.Seguidores != null && Model.Seguidores.Any())
+                    {
+                        @foreach (var seguidor in Model.Seguidores)
+                        {
+                            <div class="card">
+                                <div class="card-body d-flex align-items-center">
+                                    <!-- Foto do Seguidor -->
+                                    <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@seguidor.Id">
+                                        <img src="@Url.Content(seguidor.ImagemPerfil)" class="rounded-circle" alt="Foto do Perfil" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div class="ms-3">
+                                            <p class="mb-0"><strong>@seguidor.Nome</strong></p>
+                                        </div>
+                                    </a>
+                                    @if (Model.PerfilDoUsuarioLogado)
+                                    {
+                                        <div class="ms-auto">
+                                            <button class="btn btn-small btn-dark" id="removerSeguidorBtn" data-seguidor-id="@seguidor.Id" onclick="removerSeguidor(this)">
+                                                Remover Seguidor
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Caso não haja seguidores -->
+                        <div class="col-12">
+                            <p class="text-secondary">Nenhum seguidor ainda.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Seguindo-->
+<div class="modal fade" id="seguindoModal" tabindex="-1" aria-labelledby="seguindoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="seguidoresModalLabel">Lista de Seguidores</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    @if (Model.Seguindo != null && Model.Seguindo.Any())
+                    {
+                        @foreach (var seguidor in Model.Seguindo)
+                        {
+                            <div class="card">
+                                <div class="card-body d-flex align-items-center">
+                                    <!-- Foto do Seguidor -->
+                                    <a class="text-decoration-none text-secondary d-flex align-items-center" asp-controller="Usuario" asp-action="Perfil" asp-route-id="@seguidor.Id">
+                                        <img src="@Url.Content(seguidor.ImagemPerfil)" class="rounded-circle" alt="Foto do Perfil" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div class="ms-3">
+                                            <p class="mb-0"><strong>@seguidor.Nome</strong></p>
+                                        </div>
+                                    </a>
+                                    @if (Model.PerfilDoUsuarioLogado)
+                                    {
+                                        <div class="ms-auto">
+                                            <!-- Formulário para seguir/desseguir -->
+                                            <form class="seguirOuDeseguirForm" data-seguindo-id="@seguidor.Id" data-usuario-id="@Model.UsuarioLogadoId" method="post">
+                                                @Html.AntiForgeryToken()
+                                                @if (Model.Seguindo != null && Model.Seguindo.Contains(seguidor))
+                                                {
+                                                    <button type="submit" class="btn  btn-small btn-outline-dark">Deixar de Seguir</button>
+                                                }
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Caso não haja seguidores -->
+                        <div class="col-12">
+                            <p class="text-secondary">Nenhum seguidor ainda.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        function loadGoogleMapsAPI() {
+            const apiKey = '@Model.GoogleAPIKey';  // Acessando a chave via ViewBag
+            const script = document.createElement('script');
+
+            // Adicionando a chave da API e as bibliotecas necessárias
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps&loading=async`;
+
+            // Atributos para otimizar o carregamento
+            script.async = true;   // Carrega o script de forma assíncrona
+            script.defer = true;   // Garantir que o script será executado após o carregamento completo da página
+            document.body.appendChild(script);
+        }
+
+        // Chama a função para carregar a API
+        loadGoogleMapsAPI();
+    </script>
+    <script src="~/js/googleApi.js"></script>
+}

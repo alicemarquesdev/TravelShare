@@ -1,0 +1,56 @@
+﻿@model LoginModel
+@{
+    Layout = "_LayoutDeslogado"; // Define o layout utilizado para a página, no caso, o layout para usuários deslogados.
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header"><h3 class="text-center font-weight-light my-4">Login</h3></div>
+                <!-- Cabeçalho da página de login, com título centralizado -->
+
+                <div class="card-body">
+                    <!-- Formulário de login -->
+                    <form asp-controller="Login" asp-action="Entrar" method="post" asp-antiforgery="true">
+                        <!-- Formulário que envia a requisição POST para a action "Entrar" do controller "Login" -->
+
+                        <div class="form-floating mb-3">
+                            <!-- Campo de input para o Email ou Username -->
+                            <input class="form-control" asp-for="EmailOuUsername" type="text"/>
+                            <label for="EmailOuUsername">Email/Username</label>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.EmailOuUsername)</span>
+                            <!-- Exibe mensagem de validação, caso o campo tenha algum erro -->
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <!-- Campo de input para a Senha -->
+                            <input class="form-control" asp-for="Senha" type="password" maxlength="20"/>
+                            <label for="Senha">Senha</label>
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Senha)</span>
+                            <!-- Exibe mensagem de validação, caso o campo tenha algum erro -->
+                        </div>
+
+
+                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                            <!-- Linha com links e botão de submit -->
+
+                            <a class="small" asp-controller="Login" asp-action="RedefinirSenha">Esqueceu a Senha?</a>
+                            <!-- Link que redireciona para a página de redefinição de senha -->
+
+                            <button type="submit" class="btn btn-dark">Login</button>
+                            <!-- Botão de submit que envia o formulário -->
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <!-- Link para criar uma conta caso o usuário não tenha uma conta -->
+                        <a asp-controller="Login" asp-action="CriarConta">Não tem uma conta? Crie uma conta!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,90 @@
+﻿@model PostModel
+
+<div class="container-fluid mt-5 py-xxl-5">
+    <!-- Container principal com margem superior e espaçamento interno -->
+
+    <div class="row justify-content-center">
+        <!-- Row centralizada para alinhar os itens -->
+
+        <div class="col-md-8">
+            <!-- Coluna centralizada, ocupando 8 colunas em telas médias (md) -->
+
+            <div class="card shadow-lg">
+                <!-- Cartão que contém o formulário, com sombra para destaque -->
+
+                <div class="card-header text-white text-center">
+                    <!-- Cabeçalho do cartão -->
+                    <h3>Criar Novo Post</h3>
+                    <!-- Título centralizado -->
+                </div>
+
+                <div class="card-body pt-4">
+                    <!-- Corpo do cartão com preenchimento superior (pt-4) -->
+
+                    <form asp-controller="Post" asp-action="CriarPost" method="post" enctype="multipart/form-data" asp-antiforgery="true">
+                        <!-- Formulário para criar um novo post, enviado via POST. O atributo enctype permite o envio de arquivos -->
+                        <!-- Pré-visualização das Imagens -->
+                        <div id="currentImagePreview" class="text-center my-3" style=" max-width: 100%; max-height: 250px; object-fit: cover; margin: 5px;">
+                            <!-- Área onde as imagens serão pré-visualizadas antes de serem enviadas. -->
+                            <!-- As imagens serão injetadas dinamicamente aqui via JavaScript -->
+                        </div>
+
+                        <!-- Input de Imagem -->
+                        <div class="form-group mb-3">
+                            <!-- Grupo de formulário para o input de arquivo (imagem do post) -->
+                            <input type="file" class="form-control" asp-for="ImagemPost" id="ImagemPost" name="ImagemPost" multiple required>
+                            <!-- Campo para selecionar uma ou várias imagens para o post, o atributo "required" torna esse campo obrigatório -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.ImagemPost) </span>
+                            <!-- Exibe mensagens de erro de validação para o campo de imagem -->
+                            <small class="text-muted" id="fileWarning"></small>
+                            <!-- Aviso para o usuário sobre o tipo de arquivo, será preenchido dinamicamente -->
+                        </div>
+
+                        <!-- Input de Localização -->
+                        <div class="form-floating mb-3">
+                            <!-- Formulário de campo de texto com o recurso de flutuação da label -->
+                            <input type="text" class="form-control cities-autocomplete" asp-for="Localizacao">
+                            <!-- Campo de input para a localização, com uma classe específica para autocomplete de cidades -->
+                            <label for="Localizacao" class="ms-1">Localização</label>                           
+                            <!-- Label do campo de localização -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Localizacao) </span>
+                            <!-- Mensagem de erro caso haja problemas na validação -->
+                        </div>
+
+                        <!-- Input de Legenda -->
+                        <div class="form-floating mb-3">
+                            <!-- Formulário de textarea com flutuação da label -->
+                            <textarea type="text" class="form-control" asp-for="Legenda" rows="4"></textarea>
+                            <!-- Campo de texto para a legenda do post, com altura definida em 4 linhas -->
+                            <span class="text-danger">@Html.ValidationMessageFor(x => x.Legenda) </span>
+                            <!-- Exibe mensagens de erro de validação para o campo de legenda -->
+                            <label for="Legenda" class="ms-1">Legenda</label>
+                            <!-- Label do campo de legenda -->
+                        </div>
+
+                        <!-- Botão para Salvar -->
+                        <div class="text-end">
+                            <!-- Div com alinhamento à direita para o botão -->
+                            <button type="submit" class="btn btn-dark w-25">Partilhar</button>
+                            <!-- Botão para submeter o formulário e criar o post -->
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        const apiKey = '@ViewBag.GoogleApiKey';  // Acessando a chave via ViewBag
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+    </script>
+    <script src="~/js/googleApi.js"></script>
+    <script src="~/js/criar-post.js"></script>
+}
