@@ -62,7 +62,7 @@ namespace TravelShare.Repository
             {
                 // Busca o usuário 
                 var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
-                if (usuario == null) throw new Exception("Usuário não encontrado no banco de dados");
+                if (usuario == null)
 
                 // Monta a lista de IDs para buscar os posts dos usuários seguidos
                 var idsParaBuscar = new List<string> { id };
