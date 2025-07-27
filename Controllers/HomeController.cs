@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TravelShare.Filters;
 using TravelShare.Helper.Interfaces;
+using TravelShare.Models;
 using TravelShare.Repository.Interfaces;
 using TravelShare.ViewModels;
 
@@ -37,29 +38,36 @@ namespace TravelShare.Controllers
         // Se o usuário não estiver logado, ele será redirecionado para a página de login.
         public async Task<IActionResult> Index()
         {
+
+            var usuario = _sessao.BuscarSessaoDoUsuario();
+            if (usuario == null)
+            {
+                _logger.LogWarning("Usuário não encontrado na sessão.");
+                return RedirectToAction("Login", "Login");
+            }
+            var viewModel = new HomeViewModel { UsuarioLogado = usuario };
+
             try
             {
-                var usuario = _sessao.BuscarSessaoDoUsuario();
-                if (usuario == null)
-                {
-                    _logger.LogWarning("Usuário não encontrado na sessão.");
-                    return RedirectToAction("Login", "Login");
-                }
-
-                var viewModel = new HomeViewModel
-                {
-                    UsuarioLogado = usuario,
-                    Posts = await _postRepository.BuscarTodosOsPostsSeguindoAsync(usuario.Id),
-                    UsuariosSugestoes = await _usuarioRepository.BuscarSugestoesParaSeguirAsync(usuario.Id)
-                };
-
-                return View(viewModel);
+                viewModel.Posts = await _postRepository.BuscarTodosOsPostsSeguindoAsync(usuario.Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao carregar a página inicial.");
-                return RedirectToAction("CriarConta", "Login");
+                _logger.LogError(ex, "Erro ao buscar posts");
+                viewModel.Posts = new List<PostModel>();
             }
+
+            try
+            {
+                viewModel.UsuariosSugestoes = await _usuarioRepository.BuscarSugestoesParaSeguirAsync(usuario.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar sugestões para seguir");
+                viewModel.UsuariosSugestoes = new List<UsuarioModel>();
+            }
+
+            return View(viewModel);
         }
 
         // Exibe a página de erro
@@ -76,7 +84,7 @@ namespace TravelShare.Controllers
             {
                 var usuario = _sessao.BuscarSessaoDoUsuario();
 
-                if(usuario == null)
+                if (usuario == null)
                 {
                     _logger.LogWarning("Usuário não encontrado na sessão.");
                     return RedirectToAction("Login", "Login");
@@ -112,7 +120,7 @@ namespace TravelShare.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao carregar as notificações.");
-                TempData["Message"] = "Erro ao carregar a página Notificaceos.";
+                TempData["Message"] = "Erro ao carregar a página Notificações.";
                 return RedirectToAction("Index");
             }
         }
