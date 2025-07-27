@@ -184,7 +184,17 @@ namespace TravelShare.Controllers
 
                 // Atualiza o post existente com os novos dados
                 await _postRepository.AtualizarPostAsync(post);
+
+                if (post.Localizacao != null)
+                {
+                    var cidadeVisitada = await _cidadesVisitadasRepository.VerificarCidadeVisitadaPeloUsuarioAsync(post.UsuarioId, post.Localizacao);
+                    if(!cidadeVisitada)
+                    {
+                        await _cidadesVisitadasRepository.AddCidadeAsync(post.UsuarioId, post.Localizacao);
+                    }
+                }
                 TempData["Message"] = "Post atualizado com sucesso.";  // Exibe mensagem de sucesso
+
                 return RedirectToAction("EditarPost", new { id = post.Id });  // Redireciona para a página de edição
 
             }
@@ -241,7 +251,7 @@ namespace TravelShare.Controllers
                     }
 
                     TempData["Message"] = "Post deletado com sucesso.";  // Exibe mensagem de sucesso
-                    return RedirectToAction("Perfil", "Usuario");  // Redireciona para o perfil do usuário
+                    return RedirectToAction("Perfil", "Usuario", new {id = postExistente.UsuarioId});  // Redireciona para o perfil do usuário
                 }
 
                 // Caso não tenha sido possível deletar o post, exibe mensagem de erro
