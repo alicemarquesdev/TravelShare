@@ -75,6 +75,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             previewImage.classList.add("img-fluid", "m-1");
                             previewImage.style.maxWidth = `200px`;
                             previewImage.style.maxHeight = `200px`;
+                            previewImage.style.objectFit = "cover";
+                            previewImage.style.borderRadius = "8px";
 
                             imagePreviewContainer.appendChild(previewImage);
                         };
