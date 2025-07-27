@@ -60,23 +60,23 @@ namespace TravelShare.Repository
         {
             try
             {
-                // Busca o usuário 
                 var usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(id);
-                if (usuario == null)
+                if (usuario == null) throw new Exception("Usuário não encontrado no banco de dados");
 
-                // Monta a lista de IDs para buscar os posts dos usuários seguidos
+
+                // Sempre inclui o próprio usuário na busca
                 var idsParaBuscar = new List<string> { id };
-                if (usuario.Seguindo != null)
-                {
-                    idsParaBuscar.AddRange(usuario.Seguindo);
-                }
 
-                // Busca os posts de usuários que o usuário está seguindo, ordenados pela data de criação
+                // Adiciona os usuários seguidos (se houver)
+                if (usuario.Seguindo != null && usuario.Seguindo.Any())
+                    idsParaBuscar.AddRange(usuario.Seguindo);
+
+                // Busca os posts dos usuários relevantes
                 var posts = await _postsCollection.Find(post => idsParaBuscar.Contains(post.UsuarioId))
                                                   .SortByDescending(post => post.DataCriacao)
                                                   .ToListAsync();
 
-                // Para cada post, busca informações adicionais, como o usuário que fez o post e os comentários
+                // Enriquecer os posts com dados do usuário e comentários
                 foreach (var post in posts)
                 {
                     post.Usuario = await _usuarioRepository.BuscarUsuarioPorIdAsync(post.UsuarioId);
@@ -88,7 +88,7 @@ namespace TravelShare.Repository
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar posts de usuários seguindo.");
-                throw new Exception("Erro ao buscar posts de usuários seguindo.");
+                return new List<PostModel>(); // Não joga exceção pra não redirecionar errado
             }
         }
 
