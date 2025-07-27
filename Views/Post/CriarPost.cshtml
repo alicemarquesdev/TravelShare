@@ -24,7 +24,7 @@
                     <form asp-controller="Post" asp-action="CriarPost" method="post" enctype="multipart/form-data" asp-antiforgery="true">
                         <!-- Formulário para criar um novo post, enviado via POST. O atributo enctype permite o envio de arquivos -->
                         <!-- Pré-visualização das Imagens -->
-                        <div id="currentImagePreview" class="text-center my-3" style=" max-width: 100%; max-height: 250px; object-fit: cover; margin: 5px;">
+                        <div id="currentImagePreview" class="d-flex flex-wrap gap-2 justify-content-center my-3" style=" max-width: 100%;  margin: 5px;">
                             <!-- Área onde as imagens serão pré-visualizadas antes de serem enviadas. -->
                             <!-- As imagens serão injetadas dinamicamente aqui via JavaScript -->
                         </div>
