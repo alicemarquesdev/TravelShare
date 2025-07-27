@@ -52,8 +52,8 @@ namespace TravelShare.Repository
         {
             try
             {
-               return await _notificacaoCollection.Find(x => x.ComentarioId == comentarioId).FirstOrDefaultAsync();
-                
+                return await _notificacaoCollection.Find(x => x.ComentarioId == comentarioId).FirstOrDefaultAsync();
+
             }
             catch (Exception ex)
             {
@@ -67,13 +67,21 @@ namespace TravelShare.Repository
         {
             try
             {
+                // No Azure Cosmos DB, exibe erro ao ordenar as notificações usando SortByDescending diretamente na consulta.
                 var notificacoes = await _notificacaoCollection
-                    .Find(x => x.UsuarioDestinoId == usuarioId)
-                    .SortByDescending(x => x.DataCriacao)
-                    .ToListAsync();
+                                    .Find(x => x.UsuarioDestinoId == usuarioId)
+                                    .ToListAsync();
+
+                if (notificacoes == null || !notificacoes.Any())
+                {
+                    _logger.LogInformation("Nenhuma notificação encontrada para o usuário com ID: {UsuarioId}", usuarioId);
+                    return new List<NotificacaoModel>();
+                }
+
+                var notificacoesOrdenadas = notificacoes.OrderByDescending(x => x.DataCriacao).ToList();
 
                 // Carrega informações adicionais para cada notificação (usuário de origem e post relacionado)
-                foreach (var notificacao in notificacoes)
+                foreach (var notificacao in notificacoesOrdenadas)
                 {
                     notificacao.UsuarioOrigemModel = await _usuarioRepository.BuscarUsuarioPorIdAsync(notificacao.UsuarioOrigemId);
 
