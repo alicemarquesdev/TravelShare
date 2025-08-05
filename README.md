@@ -2,7 +2,7 @@
  
 ![TravelShare](assets/travel-share.png)
 
-👉 **[🔗 Ver projeto em produção](https://travelshare-fdajbpaygsbhd8bf.brazilsouth-01.azurewebsites.net/)**
+📽️ [Assista à demonstração do projeto](https://drive.google.com/file/d/120kbFAEOiUIzhuHOZ_bvxiniKnLNZGYw/view?usp=sharing)
 
 TravelShare é uma rede social desenvolvida em ASP.NET Core MVC, focada no compartilhamento
 de experiências de viagem. A plataforma permite que os usuários registrem e exibam os destinos
